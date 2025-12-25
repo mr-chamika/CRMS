@@ -6,7 +6,15 @@ const API_BASE = 'http://localhost:5000/api';
 
 function PersonnelList() {
     const [personnel, setPersonnel] = useState([]);
-    const [form, setForm] = useState({ name: '', email: '', role_title: '', experience_level: 'Junior', status: 'Available' });
+    const [skills, setSkills] = useState([]);
+    const [form, setForm] = useState({
+        name: '',
+        email: '',
+        role_title: '',
+        experience_level: 'Junior',
+        status: 'Available',
+        skills: [{ skill_id: '', proficiency_level: 1 }]
+    });
     const [editing, setEditing] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
@@ -14,6 +22,7 @@ function PersonnelList() {
 
     useEffect(() => {
         fetchPersonnel();
+        fetchSkills();
     }, []);
 
     const fetchPersonnel = async () => {
@@ -25,11 +34,37 @@ function PersonnelList() {
         }
     };
 
+    const fetchSkills = async () => {
+        try {
+            const response = await axios.get(`${API_BASE}/skills`);
+            setSkills(response.data);
+        } catch (error) {
+            console.error('Error fetching skills:', error);
+        }
+    };
+
+    const fetchPersonnelSkills = async (personnelId) => {
+        try {
+            const response = await axios.get(`${API_BASE}/personnel/${personnelId}/skills`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching personnel skills:', error);
+            return [];
+        }
+    };
+
     const validateForm = () => {
         const newErrors = {};
         if (!form.name.trim()) newErrors.name = 'Name is required';
-        if (!form.email.trim()) newErrors.email = 'Email is required';
+        if (!form.email.trim()) newErrors.email = 'Email is invalid';
         else if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = 'Email is invalid';
+
+        // Validate skills - at least one skill must be selected
+        const validSkills = form.skills.filter(skill => skill.skill_id && String(skill.skill_id).trim() !== '');
+        if (validSkills.length === 0) {
+            newErrors.skills = 'At least one skill must be selected';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -48,6 +83,12 @@ function PersonnelList() {
                     delete newErrors.email;
                 }
                 break;
+            case 'skills':
+                const validSkills = value.filter(skill => skill.skill_id && String(skill.skill_id).trim() !== '');
+                if (validSkills.length > 0) {
+                    delete newErrors.skills;
+                }
+                break;
             default:
                 break;
         }
@@ -61,13 +102,37 @@ function PersonnelList() {
 
         setLoading(true);
         try {
+            const personnelData = {
+                name: form.name,
+                email: form.email,
+                role_title: form.role_title,
+                experience_level: form.experience_level,
+                status: form.status
+            };
+
             if (editing) {
-                await axios.put(`${API_BASE}/personnel/${editing}`, form);
+                await axios.put(`${API_BASE}/personnel/${editing}`, personnelData);
+                // Update skills - filter out empty skill slots
+                const validSkills = form.skills.filter(skill => skill.skill_id && String(skill.skill_id).trim() !== '');
+                await axios.put(`${API_BASE}/personnel/${editing}/skills`, { skills: validSkills });
                 setEditing(null);
             } else {
-                await axios.post(`${API_BASE}/personnel`, form);
+                const response = await axios.post(`${API_BASE}/personnel`, personnelData);
+                const personnelId = response.data.id;
+                // Add skills for new personnel - filter out empty skill slots
+                const validSkills = form.skills.filter(skill => skill.skill_id && skill.skill_id.trim() !== '');
+                if (validSkills.length > 0) {
+                    await axios.put(`${API_BASE}/personnel/${personnelId}/skills`, { skills: validSkills });
+                }
             }
-            setForm({ name: '', email: '', role_title: '', experience_level: 'Junior', status: 'Available' });
+            setForm({
+                name: '',
+                email: '',
+                role_title: '',
+                experience_level: 'Junior',
+                status: 'Available',
+                skills: [{ skill_id: '', proficiency_level: 1 }]
+            });
             setErrors({});
             setShowModal(false);
             fetchPersonnel();
@@ -81,14 +146,24 @@ function PersonnelList() {
         }
     };
 
-    const handleEdit = (person) => {
-        setForm(person);
+    const handleEdit = async (person) => {
+        const personnelSkills = await fetchPersonnelSkills(person.id);
+        setForm({
+            name: person.name,
+            email: person.email,
+            role_title: person.role_title || '',
+            experience_level: person.experience_level,
+            status: person.status,
+            skills: personnelSkills.length > 0 ? personnelSkills : [{ skill_id: '', proficiency_level: 1 }]
+        });
         setEditing(person.id);
         setErrors({});
         setShowModal(true);
     };
 
     const handleDelete = async (id) => {
+
+
         if (!window.confirm('Are you sure you want to delete this personnel?')) return;
 
         try {
@@ -100,7 +175,14 @@ function PersonnelList() {
     };
 
     const handleAddNew = () => {
-        setForm({ name: '', email: '', role_title: '', experience_level: 'Junior', status: 'Available' });
+        setForm({
+            name: '',
+            email: '',
+            role_title: '',
+            experience_level: 'Junior',
+            status: 'Available',
+            skills: [{ skill_id: '', proficiency_level: 1 }]
+        });
         setEditing(null);
         setErrors({});
         setShowModal(true);
@@ -109,8 +191,43 @@ function PersonnelList() {
     const handleCloseModal = () => {
         setShowModal(false);
         setEditing(null);
-        setForm({ name: '', email: '', role_title: '', experience_level: 'Junior', status: 'Available' });
+        setForm({
+            name: '',
+            email: '',
+            role_title: '',
+            experience_level: 'Junior',
+            status: 'Available',
+            skills: [{ skill_id: '', proficiency_level: 1 }]
+        });
         setErrors({});
+    };
+
+    const addSkill = () => {
+        setForm({
+            ...form,
+            skills: [...form.skills, { skill_id: '', proficiency_level: 1 }]
+        });
+    };
+
+    const updateSkill = (index, field, value) => {
+        const updatedSkills = [...form.skills];
+        updatedSkills[index] = { ...updatedSkills[index], [field]: value };
+        setForm({ ...form, skills: updatedSkills });
+
+        // Clear skills error if skill_id was changed and all skills are now valid
+        if (field === 'skill_id') {
+            clearFieldError('skills', updatedSkills);
+        }
+    };
+
+    const removeSkill = (index) => {
+        // Only allow removal if there are more than one skills
+        if (form.skills.length > 1) {
+            const updatedSkills = form.skills.filter((_, i) => i !== index);
+            setForm({ ...form, skills: updatedSkills });
+            // Clear skills error if all remaining skills are now valid
+            clearFieldError('skills', updatedSkills);
+        }
     };
 
     return (
@@ -260,6 +377,65 @@ function PersonnelList() {
                                 <option value="On Leave">On Leave</option>
                             </select>
                         </div>
+                    </div>
+                    <div className="mb-4">
+                        <label className="font-semibold mb-2 text-gray-700 text-sm block">Personnel Skills</label>
+                        <div className="space-y-3">
+                            {form.skills.map((skill, index) => (
+                                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <div className="flex-1">
+                                        <select
+                                            value={skill.skill_id}
+                                            onChange={(e) => updateSkill(index, 'skill_id', e.target.value)}
+                                            className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
+                                        >
+                                            <option value="">Select Skill</option>
+                                            {skills.map((s) => (
+                                                <option key={s.id} value={s.id}>
+                                                    {s.skill_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-sm text-gray-600">Level:</label>
+                                        <select
+                                            value={skill.proficiency_level}
+                                            onChange={(e) => updateSkill(index, 'proficiency_level', parseInt(e.target.value))}
+                                            className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
+                                        >
+                                            <option value={1}>Beginner (1)</option>
+                                            <option value={2}>Intermediate (2)</option>
+                                            <option value={3}>Advanced (3)</option>
+                                            <option value={4}>Expert (4)</option>
+                                        </select>
+                                    </div>
+                                    {form.skills.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeSkill(index)}
+                                            className="text-red-500 hover:text-red-700 p-1"
+                                            title="Remove skill"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={addSkill}
+                                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Add Skill
+                            </button>
+                        </div>
+                        {errors.skills && <span className="text-red-500 text-xs mt-1 font-medium block">{errors.skills}</span>}
                     </div>
                     <div className="flex gap-3 mt-3">
                         <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none min-w-32 flex items-center justify-center" disabled={loading}>
