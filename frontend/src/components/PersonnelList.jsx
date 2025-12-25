@@ -234,9 +234,9 @@ function PersonnelList() {
         <div className="flex flex-col h-full max-w-6xl mx-auto p-5">
             <div className="flex justify-between items-center mb-8 pb-5 border-b-2 border-gray-200">
                 <h2 className="text-2xl font-bold text-gray-800 m-0">Personnel Dashboard</h2>
-                <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none" onClick={handleAddNew}>
+                {/* <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none" onClick={handleAddNew}>
                     Add New Personnel
-                </button>
+                </button> */}
             </div>
 
             <div className="flex-1 bg-white rounded-xl p-8 shadow-lg border border-gray-200 overflow-hidden flex flex-col">

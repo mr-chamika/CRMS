@@ -87,6 +87,22 @@ function ProjectMatching() {
                 {matching && (
                     <div className="flex-1 grid gap-8 overflow-hidden min-h-0">
                         <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 flex flex-col">
+                            <h3 className="text-xl font-bold text-gray-800 mb-5">Project Requirements</h3>
+                            <div className="flex flex-wrap gap-3">
+                                {matching.requirements && matching.requirements.map((req, index) => (
+                                    <div key={index} className="p-4 bg-gray-50 border-l-4 border-green-500 rounded-lg text-sm flex-shrink-0">
+                                        <strong>{req.skill_name}</strong>: {getProficiencyLabel(req.min_proficiency_level)}
+                                    </div>
+                                ))}
+                                {(!matching.requirements || matching.requirements.length === 0) && (
+                                    <div className="p-4 bg-gray-50 border-l-4 border-gray-300 rounded-lg text-sm text-gray-500">
+                                        No specific requirements set for this project.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 flex flex-col">
                             <h3 className="text-xl font-bold text-gray-800 mb-5">Matching Results</h3>
                             <div className="mb-5 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
                                 <p className="m-0">Found <strong>{matching.personnel ? matching.personnel.length : 0}</strong> personnel evaluated for this project.</p>
@@ -111,11 +127,11 @@ function ProjectMatching() {
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">{person.email}</td>
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">{person.role_title || '-'}</td>
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">
-                                                    <div className="flex flex-wrap gap-2">
+                                                    <div className="flex flex-col gap-1">
                                                         {person.skills && person.skills.split(',').filter(skill => skill.trim()).map((skill, index) => {
                                                             const [name, level] = skill.split(':');
                                                             return (
-                                                                <span key={index} className="bg-gray-100 px-2 py-1 rounded text-xs border border-gray-300">
+                                                                <span key={index} className="bg-gray-100 px-2 py-1 rounded text-xs border border-gray-300 inline-block">
                                                                     {name}: {getProficiencyLabel(parseInt(level))}
                                                                 </span>
                                                             );
@@ -155,22 +171,6 @@ function ProjectMatching() {
                                     <div className="text-center py-16 text-gray-500">
                                         <p className="text-lg mb-2">No personnel found in the system.</p>
                                         <p className="text-sm">Add personnel to see matching results.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 flex flex-col">
-                            <h3 className="text-xl font-bold text-gray-800 mb-5">Project Requirements</h3>
-                            <div className="grid gap-3">
-                                {matching.requirements && matching.requirements.map((req, index) => (
-                                    <div key={index} className="p-4 bg-gray-50 border-l-4 border-green-500 rounded-lg text-sm">
-                                        <strong>{req.skill_name}</strong>: {getProficiencyLabel(req.min_proficiency_level)}
-                                    </div>
-                                ))}
-                                {(!matching.requirements || matching.requirements.length === 0) && (
-                                    <div className="p-4 bg-gray-50 border-l-4 border-gray-300 rounded-lg text-sm text-gray-500">
-                                        No specific requirements set for this project.
                                     </div>
                                 )}
                             </div>
