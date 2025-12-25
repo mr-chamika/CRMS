@@ -72,8 +72,57 @@ function ProjectList() {
         if (form.start_date && form.end_date && new Date(form.start_date) > new Date(form.end_date)) {
             newErrors.end_date = 'End date must be after start date';
         }
+
+        // Validate requirements - all must have skills selected
+        const invalidRequirements = form.requirements.filter(req => !req.skill_id);
+        if (invalidRequirements.length > 0) {
+            newErrors.requirements = 'All requirements must have a skill selected';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
+    };
+
+    const clearFieldError = (fieldName, value) => {
+        const newErrors = { ...errors };
+
+        switch (fieldName) {
+            case 'name':
+                if (value.trim()) {
+                    delete newErrors.name;
+                }
+                break;
+            case 'start_date':
+                if (value) {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const startDate = new Date(value);
+
+                    if (editing || startDate >= today) {
+                        delete newErrors.start_date;
+                        // Also clear end_date error if the relationship is now valid
+                        if (form.end_date && new Date(value) <= new Date(form.end_date)) {
+                            delete newErrors.end_date;
+                        }
+                    }
+                }
+                break;
+            case 'end_date':
+                if (value && form.start_date && new Date(form.start_date) <= new Date(value)) {
+                    delete newErrors.end_date;
+                }
+                break;
+            case 'requirements':
+                const invalidRequirements = value.filter(req => !req.skill_id);
+                if (invalidRequirements.length === 0) {
+                    delete newErrors.requirements;
+                }
+                break;
+            default:
+                break;
+        }
+
+        setErrors(newErrors);
     };
 
     const handleSubmit = async (e) => {
@@ -109,7 +158,7 @@ function ProjectList() {
                 start_date: '',
                 end_date: '',
                 status: 'Planning',
-                requirements: []
+                requirements: [{ skill_id: '', min_proficiency_level: 1 }]
             });
             setErrors({});
             setShowModal(false);
@@ -132,7 +181,7 @@ function ProjectList() {
             start_date: project.start_date ? project.start_date.split('T')[0] : '',
             end_date: project.end_date ? project.end_date.split('T')[0] : '',
             status: project.status,
-            requirements: requirements
+            requirements: requirements.length > 0 ? requirements : [{ skill_id: '', min_proficiency_level: 1 }]
         });
         setEditing(project.id);
         setErrors({});
@@ -157,7 +206,7 @@ function ProjectList() {
             start_date: '',
             end_date: '',
             status: 'Planning',
-            requirements: []
+            requirements: [{ skill_id: '', min_proficiency_level: 1 }]
         });
         setEditing(null);
         setErrors({});
@@ -173,7 +222,7 @@ function ProjectList() {
             start_date: '',
             end_date: '',
             status: 'Planning',
-            requirements: []
+            requirements: [{ skill_id: '', min_proficiency_level: 1 }]
         });
         setErrors({});
     };
@@ -188,12 +237,23 @@ function ProjectList() {
     const updateRequirement = (index, field, value) => {
         const updatedRequirements = [...form.requirements];
         updatedRequirements[index] = { ...updatedRequirements[index], [field]: value };
-        setForm({ ...form, requirements: updatedRequirements });
+        const newRequirements = [...updatedRequirements];
+        setForm({ ...form, requirements: newRequirements });
+
+        // Clear requirements error if skill_id was changed and all requirements are now valid
+        if (field === 'skill_id') {
+            clearFieldError('requirements', newRequirements);
+        }
     };
 
     const removeRequirement = (index) => {
-        const updatedRequirements = form.requirements.filter((_, i) => i !== index);
-        setForm({ ...form, requirements: updatedRequirements });
+        // Only allow removal if there are more than one requirements
+        if (form.requirements.length > 1) {
+            const updatedRequirements = form.requirements.filter((_, i) => i !== index);
+            setForm({ ...form, requirements: updatedRequirements });
+            // Clear requirements error if all remaining requirements are now valid
+            clearFieldError('requirements', updatedRequirements);
+        }
     };
 
     return (
@@ -274,14 +334,17 @@ function ProjectList() {
             >
                 {errors.submit && <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-6 border border-red-200 font-medium">{errors.submit}</div>}
                 <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="flex flex-col">
                             <label htmlFor="name" className="font-semibold mb-2 text-gray-700 text-sm">Project Name *</label>
                             <input
                                 id="name"
                                 type="text"
                                 value={form.name}
-                                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                onChange={(e) => {
+                                    setForm({ ...form, name: e.target.value });
+                                    clearFieldError('name', e.target.value);
+                                }}
                                 className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.name ? 'border-red-500' : ''}`}
                                 placeholder="Enter project name"
                                 autoFocus
@@ -302,6 +365,17 @@ function ProjectList() {
                             </select>
                         </div>
                     </div>
+                    <div className="mb-5">
+                        <label htmlFor="description" className="font-semibold mb-2 text-gray-700 text-sm block">Description</label>
+                        <textarea
+                            id="description"
+                            value={form.description}
+                            onChange={(e) => setForm({ ...form, description: e.target.value })}
+                            className="w-full p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 resize-vertical"
+                            placeholder="Enter project description"
+                            rows="3"
+                        />
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                         <div className="flex flex-col">
                             <label htmlFor="start_date" className="font-semibold mb-2 text-gray-700 text-sm">Start Date *</label>
@@ -309,7 +383,10 @@ function ProjectList() {
                                 id="start_date"
                                 type="date"
                                 value={form.start_date}
-                                onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                                onChange={(e) => {
+                                    setForm({ ...form, start_date: e.target.value });
+                                    clearFieldError('start_date', e.target.value);
+                                }}
                                 min={!editing ? new Date().toISOString().split('T')[0] : undefined}
                                 className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.start_date ? 'border-red-500' : ''}`}
                             />
@@ -321,7 +398,10 @@ function ProjectList() {
                                 id="end_date"
                                 type="date"
                                 value={form.end_date}
-                                onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                                onChange={(e) => {
+                                    setForm({ ...form, end_date: e.target.value });
+                                    clearFieldError('end_date', e.target.value);
+                                }}
                                 min={form.start_date || new Date().toISOString().split('T')[0]}
                                 className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.end_date ? 'border-red-500' : ''}`}
                             />
@@ -360,16 +440,18 @@ function ProjectList() {
                                             <option value={4}>Expert (4)</option>
                                         </select>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => removeRequirement(index)}
-                                        className="text-red-500 hover:text-red-700 p-1"
-                                        title="Remove requirement"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
+                                    {form.requirements.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeRequirement(index)}
+                                            className="text-red-500 hover:text-red-700 p-1"
+                                            title="Remove requirement"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    )}
                                 </div>
                             ))}
                             <button
@@ -383,6 +465,7 @@ function ProjectList() {
                                 Add Requirement
                             </button>
                         </div>
+                        {errors.requirements && <span className="text-red-500 text-xs mt-1 font-medium block">{errors.requirements}</span>}
                     </div>
                     <div className="flex gap-3 mt-3">
                         <button

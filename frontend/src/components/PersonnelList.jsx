@@ -34,6 +34,27 @@ function PersonnelList() {
         return Object.keys(newErrors).length === 0;
     };
 
+    const clearFieldError = (fieldName, value) => {
+        const newErrors = { ...errors };
+
+        switch (fieldName) {
+            case 'name':
+                if (value.trim()) {
+                    delete newErrors.name;
+                }
+                break;
+            case 'email':
+                if (value.trim() && /\S+@\S+\.\S+/.test(value)) {
+                    delete newErrors.email;
+                }
+                break;
+            default:
+                break;
+        }
+
+        setErrors(newErrors);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
@@ -173,7 +194,10 @@ function PersonnelList() {
                                 id="name"
                                 type="text"
                                 value={form.name}
-                                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                                onChange={(e) => {
+                                    setForm({ ...form, name: e.target.value });
+                                    clearFieldError('name', e.target.value);
+                                }}
                                 className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.name ? 'border-red-500' : ''}`}
                                 placeholder="Enter full name"
                                 autoFocus
@@ -186,7 +210,10 @@ function PersonnelList() {
                                 id="email"
                                 type="email"
                                 value={form.email}
-                                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                                onChange={(e) => {
+                                    setForm({ ...form, email: e.target.value });
+                                    clearFieldError('email', e.target.value);
+                                }}
                                 className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.email ? 'border-red-500' : ''}`}
                                 placeholder="Enter email address"
                             />
