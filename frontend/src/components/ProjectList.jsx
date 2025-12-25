@@ -6,12 +6,14 @@ const API_BASE = 'http://localhost:5000/api';
 
 function ProjectList() {
     const [projects, setProjects] = useState([]);
+    const [skills, setSkills] = useState([]);
     const [form, setForm] = useState({
         name: '',
         description: '',
         start_date: '',
         end_date: '',
-        status: 'Planning'
+        status: 'Planning',
+        requirements: [] // Array of { skill_id, min_proficiency_level }
     });
     const [editing, setEditing] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -20,6 +22,7 @@ function ProjectList() {
 
     useEffect(() => {
         fetchProjects();
+        fetchSkills();
     }, []);
 
     const fetchProjects = async () => {
@@ -28,6 +31,25 @@ function ProjectList() {
             setProjects(response.data);
         } catch (error) {
             console.error('Error fetching projects:', error);
+        }
+    };
+
+    const fetchSkills = async () => {
+        try {
+            const response = await axios.get(`${API_BASE}/skills`);
+            setSkills(response.data);
+        } catch (error) {
+            console.error('Error fetching skills:', error);
+        }
+    };
+
+    const fetchProjectRequirements = async (projectId) => {
+        try {
+            const response = await axios.get(`${API_BASE}/projects/${projectId}/requirements`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching project requirements:', error);
+            return [];
         }
     };
 
@@ -60,18 +82,34 @@ function ProjectList() {
 
         setLoading(true);
         try {
+            const projectData = {
+                name: form.name,
+                description: form.description,
+                start_date: form.start_date,
+                end_date: form.end_date,
+                status: form.status
+            };
+
             if (editing) {
-                await axios.put(`${API_BASE}/projects/${editing}`, form);
+                await axios.put(`${API_BASE}/projects/${editing}`, projectData);
+                // Update requirements
+                await axios.put(`${API_BASE}/projects/${editing}/requirements`, { requirements: form.requirements });
                 setEditing(null);
             } else {
-                await axios.post(`${API_BASE}/projects`, form);
+                const response = await axios.post(`${API_BASE}/projects`, projectData);
+                const projectId = response.data.id;
+                // Add requirements for new project
+                if (form.requirements.length > 0) {
+                    await axios.post(`${API_BASE}/projects/${projectId}/requirements`, { requirements: form.requirements });
+                }
             }
             setForm({
                 name: '',
                 description: '',
                 start_date: '',
                 end_date: '',
-                status: 'Planning'
+                status: 'Planning',
+                requirements: []
             });
             setErrors({});
             setShowModal(false);
@@ -86,13 +124,15 @@ function ProjectList() {
         }
     };
 
-    const handleEdit = (project) => {
+    const handleEdit = async (project) => {
+        const requirements = await fetchProjectRequirements(project.id);
         setForm({
             name: project.name,
             description: project.description || '',
             start_date: project.start_date ? project.start_date.split('T')[0] : '',
             end_date: project.end_date ? project.end_date.split('T')[0] : '',
-            status: project.status
+            status: project.status,
+            requirements: requirements
         });
         setEditing(project.id);
         setErrors({});
@@ -116,7 +156,8 @@ function ProjectList() {
             description: '',
             start_date: '',
             end_date: '',
-            status: 'Planning'
+            status: 'Planning',
+            requirements: []
         });
         setEditing(null);
         setErrors({});
@@ -131,9 +172,28 @@ function ProjectList() {
             description: '',
             start_date: '',
             end_date: '',
-            status: 'Planning'
+            status: 'Planning',
+            requirements: []
         });
         setErrors({});
+    };
+
+    const addRequirement = () => {
+        setForm({
+            ...form,
+            requirements: [...form.requirements, { skill_id: '', min_proficiency_level: 1 }]
+        });
+    };
+
+    const updateRequirement = (index, field, value) => {
+        const updatedRequirements = [...form.requirements];
+        updatedRequirements[index] = { ...updatedRequirements[index], [field]: value };
+        setForm({ ...form, requirements: updatedRequirements });
+    };
+
+    const removeRequirement = (index) => {
+        const updatedRequirements = form.requirements.filter((_, i) => i !== index);
+        setForm({ ...form, requirements: updatedRequirements });
     };
 
     return (
@@ -269,15 +329,60 @@ function ProjectList() {
                         </div>
                     </div>
                     <div className="mb-4">
-                        <label htmlFor="description" className="font-semibold mb-2 text-gray-700 text-sm block">Description</label>
-                        <textarea
-                            id="description"
-                            value={form.description}
-                            onChange={(e) => setForm({ ...form, description: e.target.value })}
-                            className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 w-full"
-                            placeholder="Enter project description"
-                            rows="4"
-                        />
+                        <label className="font-semibold mb-2 text-gray-700 text-sm block">Project Requirements</label>
+                        <div className="space-y-3">
+                            {form.requirements.map((req, index) => (
+                                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <div className="flex-1">
+                                        <select
+                                            value={req.skill_id}
+                                            onChange={(e) => updateRequirement(index, 'skill_id', e.target.value)}
+                                            className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
+                                        >
+                                            <option value="">Select Skill</option>
+                                            {skills.map((skill) => (
+                                                <option key={skill.id} value={skill.id}>
+                                                    {skill.skill_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-sm text-gray-600">Min Level:</label>
+                                        <select
+                                            value={req.min_proficiency_level}
+                                            onChange={(e) => updateRequirement(index, 'min_proficiency_level', parseInt(e.target.value))}
+                                            className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
+                                        >
+                                            <option value={1}>Beginner (1)</option>
+                                            <option value={2}>Intermediate (2)</option>
+                                            <option value={3}>Advanced (3)</option>
+                                            <option value={4}>Expert (4)</option>
+                                        </select>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeRequirement(index)}
+                                        className="text-red-500 hover:text-red-700 p-1"
+                                        title="Remove requirement"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={addRequirement}
+                                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Add Requirement
+                            </button>
+                        </div>
                     </div>
                     <div className="flex gap-3 mt-3">
                         <button
