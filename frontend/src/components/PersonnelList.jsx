@@ -6,7 +6,7 @@ const API_BASE = 'http://localhost:5000/api';
 
 function PersonnelList() {
     const [personnel, setPersonnel] = useState([]);
-    const [form, setForm] = useState({ name: '', email: '', role_title: '', experience_level: 'Junior' });
+    const [form, setForm] = useState({ name: '', email: '', role_title: '', experience_level: 'Junior', status: 'Available' });
     const [editing, setEditing] = useState(null);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
@@ -46,7 +46,7 @@ function PersonnelList() {
             } else {
                 await axios.post(`${API_BASE}/personnel`, form);
             }
-            setForm({ name: '', email: '', role_title: '', experience_level: 'Junior' });
+            setForm({ name: '', email: '', role_title: '', experience_level: 'Junior', status: 'Available' });
             setErrors({});
             setShowModal(false);
             fetchPersonnel();
@@ -79,7 +79,7 @@ function PersonnelList() {
     };
 
     const handleAddNew = () => {
-        setForm({ name: '', email: '', role_title: '', experience_level: 'Junior' });
+        setForm({ name: '', email: '', role_title: '', experience_level: 'Junior', status: 'Available' });
         setEditing(null);
         setErrors({});
         setShowModal(true);
@@ -88,7 +88,7 @@ function PersonnelList() {
     const handleCloseModal = () => {
         setShowModal(false);
         setEditing(null);
-        setForm({ name: '', email: '', role_title: '', experience_level: 'Junior' });
+        setForm({ name: '', email: '', role_title: '', experience_level: 'Junior', status: 'Available' });
         setErrors({});
     };
 
@@ -111,6 +111,7 @@ function PersonnelList() {
                                 <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Email</th>
                                 <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Role</th>
                                 <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Experience</th>
+                                <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Status</th>
                                 <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Created</th>
                                 <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Actions</th>
                             </tr>
@@ -127,6 +128,14 @@ function PersonnelList() {
                                                 'bg-cyan-100 text-cyan-800'
                                             }`}>
                                             {person.experience_level}
+                                        </span>
+                                    </td>
+                                    <td className="py-4 px-3 border-b border-gray-200 align-middle">
+                                        <span className={`inline-block py-1 px-3 rounded-full text-xs font-semibold uppercase ${person.status === 'Available' ? 'bg-green-100 text-green-800' :
+                                            person.status === 'Busy' ? 'bg-red-100 text-red-800' :
+                                                'bg-yellow-100 text-yellow-800'
+                                            }`}>
+                                            {person.status}
                                         </span>
                                     </td>
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle">{new Date(person.created_at).toLocaleDateString()}</td>
@@ -207,6 +216,21 @@ function PersonnelList() {
                                 <option value="Junior">Junior</option>
                                 <option value="Mid-Level">Mid-Level</option>
                                 <option value="Senior">Senior</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
+                        <div className="flex flex-col">
+                            <label htmlFor="status" className="font-semibold mb-2 text-gray-700 text-sm">Availability Status</label>
+                            <select
+                                id="status"
+                                value={form.status}
+                                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                                className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
+                            >
+                                <option value="Available">Available</option>
+                                <option value="Busy">Busy</option>
+                                <option value="On Leave">On Leave</option>
                             </select>
                         </div>
                     </div>
