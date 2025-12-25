@@ -93,7 +93,7 @@ function PersonnelList() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-5">
+        <div className="flex flex-col h-full max-w-6xl mx-auto p-5">
             <div className="flex justify-between items-center mb-8 pb-5 border-b-2 border-gray-200">
                 <h2 className="text-2xl font-bold text-gray-800 m-0">Personnel Dashboard</h2>
                 <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none" onClick={handleAddNew}>
@@ -101,9 +101,9 @@ function PersonnelList() {
                 </button>
             </div>
 
-            <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 mb-8">
+            <div className="flex-1 bg-white rounded-xl p-8 shadow-lg border border-gray-200 overflow-hidden flex flex-col">
                 <h3 className="text-xl font-bold text-gray-800 mb-5">Personnel List ({personnel.length})</h3>
-                <div className="overflow-x-auto">
+                <div className="overflow-auto max-h-80">
                     <table className="w-full border-collapse text-sm">
                         <thead>
                             <tr>
