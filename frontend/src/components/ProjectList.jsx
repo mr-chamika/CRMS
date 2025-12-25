@@ -19,6 +19,12 @@ function ProjectList() {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [showModal, setShowModal] = useState(false);
+    const [viewing, setViewing] = useState(null);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [filters, setFilters] = useState({
+        search: '',
+        status: ''
+    });
 
     useEffect(() => {
         fetchProjects();
@@ -173,6 +179,41 @@ function ProjectList() {
         }
     };
 
+    const filteredProjects = projects.filter(project => {
+        const matchesSearch = !filters.search ||
+            project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+            (project.description && project.description.toLowerCase().includes(filters.search.toLowerCase()));
+
+        const matchesStatus = !filters.status || project.status === filters.status;
+
+        return matchesSearch && matchesStatus;
+    });
+
+    const handleFilterChange = (field, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            search: '',
+            status: ''
+        });
+    };
+
+    const handleView = async (project) => {
+        const requirements = await fetchProjectRequirements(project.id);
+        setViewing({ ...project, requirements });
+        setShowViewModal(true);
+    };
+
+    const handleCloseViewModal = () => {
+        setShowViewModal(false);
+        setViewing(null);
+    };
+
     const handleEdit = async (project) => {
         const requirements = await fetchProjectRequirements(project.id);
         setForm({
@@ -269,7 +310,45 @@ function ProjectList() {
             </div>
 
             <div className="flex-1 bg-white rounded-xl p-8 shadow-lg border border-gray-200 overflow-hidden flex flex-col">
-                <h3 className="text-xl font-bold text-gray-800 mb-5">Project List ({projects.length})</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                    <h3 className="text-xl font-bold text-gray-800 m-0">Project List ({filteredProjects.length})</h3>
+
+                    {/* Filter Controls */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search by name or description..."
+                                value={filters.search}
+                                onChange={(e) => handleFilterChange('search', e.target.value)}
+                                className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+
+                        <select
+                            value={filters.status}
+                            onChange={(e) => handleFilterChange('status', e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="Planning">Planning</option>
+                            <option value="Active">Active</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+
+                        {(filters.search || filters.status) && (
+                            <button
+                                onClick={clearFilters}
+                                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                            >
+                                Clear Filters
+                            </button>
+                        )}
+                    </div>
+                </div>
                 <div className="overflow-auto max-h-80">
                     <table className="w-full border-collapse text-sm">
                         <thead>
@@ -283,10 +362,10 @@ function ProjectList() {
                             </tr>
                         </thead>
                         <tbody>
-                            {projects.map((project) => (
+                            {filteredProjects.map((project) => (
                                 <tr key={project.id} className="hover:bg-gray-50">
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle font-medium">{project.name}</td>
-                                    <td className="py-4 px-3 border-b border-gray-200 align-middle">{project.description || '-'}</td>
+                                    <td className="py-4 px-3 border-b border-gray-200 align-middle truncate max-w-xs">{project.description || '-'}</td>
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle">
                                         {project.start_date ? new Date(project.start_date).toLocaleDateString() : '-'}
                                     </td>
@@ -302,6 +381,9 @@ function ProjectList() {
                                         </span>
                                     </td>
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle">
+                                        <button onClick={() => handleView(project)} className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg text-sm mr-2 transition-colors duration-200">
+                                            View
+                                        </button>
                                         <button
                                             onClick={() => handleEdit(project)}
                                             className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg text-sm mr-2 transition-colors duration-200"
@@ -319,9 +401,16 @@ function ProjectList() {
                             ))}
                         </tbody>
                     </table>
-                    {projects.length === 0 && (
+                    {filteredProjects.length === 0 && (
                         <div className="text-center py-16 text-gray-500">
-                            <p className="text-lg m-0">No projects found. Click "Add New Project" to get started.</p>
+                            {projects.length === 0 ? (
+                                <p className="text-lg m-0">No projects found. Click "Add New Project" to get started.</p>
+                            ) : (
+                                <div>
+                                    <p className="text-lg m-0 mb-2">No projects match your filters.</p>
+                                    <p className="text-sm text-gray-400">Try adjusting your search criteria or clearing the filters.</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -361,7 +450,7 @@ function ProjectList() {
                             >
                                 <option value="Planning">Planning</option>
                                 <option value="Active">Active</option>
-                                <option value="Completed">Completed</option>
+                                {editing && <option value="Completed">Completed</option>}
                             </select>
                         </div>
                     </div>
@@ -484,6 +573,133 @@ function ProjectList() {
                         </button>
                     </div>
                 </form>
+            </Modal>
+
+            <Modal
+                isOpen={showViewModal}
+                onClose={handleCloseViewModal}
+                title="Project Details"
+            >
+                {viewing && (
+                    <div className="space-y-6">
+                        {/* Header Section with Project Name */}
+                        <div className="text-center pb-4 border-b border-gray-200">
+                            <h3 className="text-xl font-bold text-gray-800 mb-3">{viewing.name}</h3>
+                            <div className="max-h-24 overflow-y-auto px-2">
+                                <p className="text-gray-600 text-sm leading-relaxed text-justify">
+                                    {viewing.description || 'No description provided'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className="flex justify-center">
+                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${viewing.status === 'Planning' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                                viewing.status === 'Active' ? 'bg-green-100 text-green-800 border border-green-200' :
+                                    'bg-blue-100 text-blue-800 border border-blue-200'
+                                }`}>
+                                <span className={`w-2 h-2 rounded-full mr-2 ${viewing.status === 'Planning' ? 'bg-yellow-500' :
+                                    viewing.status === 'Active' ? 'bg-green-500' :
+                                        'bg-blue-500'
+                                    }`}></span>
+                                {viewing.status}
+                            </span>
+                        </div>
+
+                        {/* Project Information Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                                <div className="flex items-center mb-2">
+                                    <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <label className="font-semibold text-blue-800 text-sm">Start Date</label>
+                                </div>
+                                <p className="text-gray-900 font-medium">
+                                    {viewing.start_date ? new Date(viewing.start_date).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                    }) : 'Not set'}
+                                </p>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100">
+                                <div className="flex items-center mb-2">
+                                    <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <label className="font-semibold text-green-800 text-sm">End Date</label>
+                                </div>
+                                <p className="text-gray-900 font-medium">
+                                    {viewing.end_date ? new Date(viewing.end_date).toLocaleDateString('en-US', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                    }) : 'Not set'}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Requirements Section */}
+                        <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-6 rounded-xl border border-gray-200">
+                            <div className="flex items-center mb-4">
+                                <svg className="w-6 h-6 text-gray-700 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
+                                <h4 className="text-lg font-bold text-gray-800">Skill Requirements</h4>
+                                <span className="ml-auto bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
+                                    {viewing.requirements?.length || 0} requirements
+                                </span>
+                            </div>
+
+                            {viewing.requirements && viewing.requirements.length > 0 ? (
+                                <div className="max-h-36 overflow-y-auto">
+                                    <div className="grid gap-3">
+                                        {viewing.requirements.map((requirement, index) => (
+                                            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center flex-1">
+                                                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm mr-3">
+                                                            {requirement.skill_name?.charAt(0).toUpperCase() || '?'}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h5 className="font-semibold text-gray-900 text-sm">{requirement.skill_name || 'Unknown Skill'}</h5>
+                                                            <div className="flex items-center mt-1 flex-row justify-between">
+                                                                <div className="flex space-x-1 mr-3">
+                                                                    {[1, 2, 3, 4].map((level) => (
+                                                                        <div
+                                                                            key={level}
+                                                                            className={`w-2 h-2 rounded-full ${level <= requirement.min_proficiency_level
+                                                                                ? 'bg-yellow-400'
+                                                                                : 'bg-gray-300'
+                                                                                }`}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <span className="text-xs text-gray-600 font-medium">
+                                                                    Min Level {requirement.min_proficiency_level}/4
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-8">
+                                    <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    <p className="text-gray-500 font-medium">No skill requirements specified</p>
+                                    <p className="text-gray-400 text-sm">Requirements will appear here when added</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );

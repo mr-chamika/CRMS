@@ -12,21 +12,21 @@ function App() {
                 <h1 className="m-0 text-4xl font-bold text-center drop-shadow-lg">Personnel Skill Management</h1>
                 <nav className="flex justify-center gap-5 mt-5">
                     <button
-                        className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'personnel' ? 'bg-white text-blue-500 border-white' : ''
+                        className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'personnel' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
                             }`}
                         onClick={() => setActiveTab('personnel')}
                     >
                         Personnel Dashboard
                     </button>
                     <button
-                        className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'projects' ? 'bg-white text-blue-500 border-white' : ''
+                        className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'projects' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
                             }`}
                         onClick={() => setActiveTab('projects')}
                     >
                         Project Dashboard
                     </button>
                     <button
-                        className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'matching' ? 'bg-white text-blue-500 border-white' : ''
+                        className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'matching' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
                             }`}
                         onClick={() => setActiveTab('matching')}
                     >
