@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import Modal from './Modal';
-
-const API_BASE = 'http://localhost:5000/api';
+import api from '../utils/api';
 
 function ProjectList() {
     const [projects, setProjects] = useState([]);
@@ -33,25 +31,27 @@ function ProjectList() {
 
     const fetchProjects = async () => {
         try {
-            const response = await axios.get(`${API_BASE}/projects`);
-            setProjects(response.data);
+            const response = await api.get('/projects');
+            setProjects(response.data || []);
         } catch (error) {
             console.error('Error fetching projects:', error);
+            setProjects([]);
         }
     };
 
     const fetchSkills = async () => {
         try {
-            const response = await axios.get(`${API_BASE}/skills`);
-            setSkills(response.data);
+            const response = await api.get('/skills');
+            setSkills(response.data || []);
         } catch (error) {
             console.error('Error fetching skills:', error);
+            setSkills([]);
         }
     };
 
     const fetchProjectRequirements = async (projectId) => {
         try {
-            const response = await axios.get(`${API_BASE}/projects/${projectId}/requirements`);
+            const response = await api.get(`/projects/${projectId}/requirements`);
             return response.data;
         } catch (error) {
             console.error('Error fetching project requirements:', error);
@@ -146,16 +146,16 @@ function ProjectList() {
             };
 
             if (editing) {
-                await axios.put(`${API_BASE}/projects/${editing}`, projectData);
+                await api.put(`/projects/${editing}`, projectData);
                 // Update requirements
-                await axios.put(`${API_BASE}/projects/${editing}/requirements`, { requirements: form.requirements });
+                await api.put(`/projects/${editing}/requirements`, { requirements: form.requirements });
                 setEditing(null);
             } else {
-                const response = await axios.post(`${API_BASE}/projects`, projectData);
+                const response = await api.post('/projects', projectData);
                 const projectId = response.data.id;
                 // Add requirements for new project
                 if (form.requirements.length > 0) {
-                    await axios.post(`${API_BASE}/projects/${projectId}/requirements`, { requirements: form.requirements });
+                    await api.post(`/projects/${projectId}/requirements`, { requirements: form.requirements });
                 }
             }
             setForm({
@@ -179,7 +179,7 @@ function ProjectList() {
         }
     };
 
-    const filteredProjects = projects.filter(project => {
+    const filteredProjects = (projects || []).filter(project => {
         const matchesSearch = !filters.search ||
             project.name.toLowerCase().includes(filters.search.toLowerCase()) ||
             (project.description && project.description.toLowerCase().includes(filters.search.toLowerCase()));
@@ -233,7 +233,7 @@ function ProjectList() {
         if (!window.confirm('Are you sure you want to delete this project?')) return;
 
         try {
-            await axios.delete(`${API_BASE}/projects/${id}`);
+            await api.delete(`/projects/${id}`);
             fetchProjects();
         } catch (error) {
             console.error('Error deleting project:', error);
@@ -311,7 +311,7 @@ function ProjectList() {
 
             <div className="flex-1 bg-white rounded-xl p-8 shadow-lg border border-gray-200 overflow-hidden flex flex-col">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
-                    <h3 className="text-xl font-bold text-gray-800 m-0">Project List ({filteredProjects.length})</h3>
+                    <h3 className="text-xl font-bold text-gray-800 m-0">Project List ({(filteredProjects || []).length})</h3>
 
                     {/* Filter Controls */}
                     <div className="flex flex-col sm:flex-row gap-3">
@@ -362,7 +362,7 @@ function ProjectList() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredProjects.map((project) => (
+                            {filteredProjects && filteredProjects.length > 0 && filteredProjects.map((project) => (
                                 <tr key={project.id} className="hover:bg-gray-50">
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle font-medium">{project.name}</td>
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle truncate max-w-xs">{project.description || '-'}</td>
@@ -401,9 +401,9 @@ function ProjectList() {
                             ))}
                         </tbody>
                     </table>
-                    {filteredProjects.length === 0 && (
+                    {(filteredProjects || []).length === 0 && (
                         <div className="text-center py-16 text-gray-500">
-                            {projects.length === 0 ? (
+                            {(projects || []).length === 0 ? (
                                 <p className="text-lg m-0">No projects found. Click "Add New Project" to get started.</p>
                             ) : (
                                 <div>
@@ -500,7 +500,7 @@ function ProjectList() {
                     <div className="mb-4">
                         <label className="font-semibold mb-2 text-gray-700 text-sm block">Project Requirements</label>
                         <div className="space-y-3">
-                            {form.requirements.map((req, index) => (
+                            {form.requirements && form.requirements.length > 0 && form.requirements.map((req, index) => (
                                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                                     <div className="flex-1">
                                         <select
@@ -509,7 +509,7 @@ function ProjectList() {
                                             className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
                                         >
                                             <option value="">Select Skill</option>
-                                            {skills.map((skill) => (
+                                            {skills && skills.length > 0 && skills.map((skill) => (
                                                 <option key={skill.id} value={skill.id}>
                                                     {skill.skill_name}
                                                 </option>
@@ -656,7 +656,7 @@ function ProjectList() {
                             {viewing.requirements && viewing.requirements.length > 0 ? (
                                 <div className="max-h-36 overflow-y-auto">
                                     <div className="grid gap-3">
-                                        {viewing.requirements.map((requirement, index) => (
+                                        {viewing.requirements && viewing.requirements.length > 0 && viewing.requirements.map((requirement, index) => (
                                             <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center flex-1">

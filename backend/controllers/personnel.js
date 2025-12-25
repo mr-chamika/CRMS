@@ -5,7 +5,7 @@ const { getDB } = require('../db');
 router.get('/', async (req, res) => {
     try {
         const db = await getDB();
-        const [rows] = await db.execute('SELECT * FROM personnel');
+        const [rows] = await db.execute('SELECT id, name, email, role_title, experience_level, status, created_at FROM personnel');
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });

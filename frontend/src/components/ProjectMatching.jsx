@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_BASE = 'http://localhost:5000/api';
+import api from '../utils/api';
 
 function ProjectMatching() {
     const [projects, setProjects] = useState([]);
@@ -16,7 +14,7 @@ function ProjectMatching() {
 
     const fetchProjects = async () => {
         try {
-            const response = await axios.get(`${API_BASE}/projects`);
+            const response = await api.get('/projects');
             setProjects(response.data || []);
         } catch (error) {
             console.error('Error fetching projects:', error);
@@ -32,7 +30,7 @@ function ProjectMatching() {
         setMatching(null);
 
         try {
-            const response = await axios.get(`${API_BASE}/projects/${selectedProject}/matching`);
+            const response = await api.get(`/projects/${selectedProject}/matching`);
             setMatching(response.data || { personnel: [], requirements: [] });
         } catch (error) {
             console.error('Error fetching matching:', error);
@@ -88,7 +86,7 @@ function ProjectMatching() {
                     <div className="flex-1 grid gap-8 overflow-hidden min-h-0">
                         <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 flex flex-col">
                             <h3 className="text-xl font-bold text-gray-800 mb-5">Project Requirements</h3>
-                            <div className="flex flex-wrap gap-3">
+                            <div className="flex flex-row gap-3 overflow-x-auto">
                                 {matching.requirements && matching.requirements.map((req, index) => (
                                     <div key={index} className="p-4 bg-gray-50 border-l-4 border-green-500 rounded-lg text-sm flex-shrink-0">
                                         <strong>{req.skill_name}</strong>: {getProficiencyLabel(req.min_proficiency_level)}
@@ -158,10 +156,18 @@ function ProjectMatching() {
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">
-                                                    <span className={`font-semibold ${person.utilization_warning ? 'text-yellow-600' : 'text-green-600'
-                                                        }`}>
-                                                        {person.utilization_warning ? '⚠️ Warning' : '✅ Available'}
-                                                    </span>
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <span className={`font-bold py-1 px-3 rounded text-sm ${person.utilization_level === 'critical' ? 'bg-red-100 text-red-800 border border-red-300' :
+                                                            person.utilization_level === 'high' ? 'bg-orange-100 text-orange-800 border border-orange-300' :
+                                                                person.utilization_level === 'medium' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
+                                                                    'bg-green-100 text-green-800 border border-green-300'
+                                                            }`}>
+                                                            {person.current_utilization}%
+                                                        </span>
+                                                        {person.utilization_warning && (
+                                                            <span className="text-xs text-red-600 font-medium">⚠️ Overloaded</span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}

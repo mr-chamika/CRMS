@@ -66,10 +66,12 @@ router.get('/:id/matching', async (req, res) => {
 
         const [allPersonnel] = await db.execute(`
       SELECT p.id, p.name, p.email, p.role_title, p.experience_level, p.status,
-             COALESCE(GROUP_CONCAT(CONCAT(s.skill_name, ':', ps.proficiency_level)), '') as skills
+             COALESCE(GROUP_CONCAT(CONCAT(s.skill_name, ':', ps.proficiency_level)), '') as skills,
+             COALESCE(SUM(pa.capacity_percentage), 0) as current_utilization
       FROM personnel p
       LEFT JOIN personnel_skills ps ON p.id = ps.personnel_id
       LEFT JOIN skills s ON ps.skill_id = s.id
+      LEFT JOIN project_assignments pa ON p.id = pa.personnel_id
       GROUP BY p.id
     `);
 
@@ -103,13 +105,30 @@ router.get('/:id/matching', async (req, res) => {
 
             const matchScore = requirements.length > 0 ? Math.round((matchedSkills / requirements.length) * 100) : 0;
 
+            // Calculate utilization warning based on current workload
+            const currentUtilization = parseFloat(person.current_utilization) || 0;
+            let utilization_warning = false;
+            let utilization_level = 'low';
+
+            if (currentUtilization >= 90) {
+                utilization_warning = true;
+                utilization_level = 'critical';
+            } else if (currentUtilization >= 75) {
+                utilization_warning = true;
+                utilization_level = 'high';
+            } else if (currentUtilization >= 50) {
+                utilization_level = 'medium';
+            }
+
             return {
                 ...person,
                 skills: skillsStr,
                 match_score: matchScore,
                 matched_skills: matchedSkills,
                 total_required_skills: requirements.length,
-                utilization_warning: false
+                utilization_warning,
+                utilization_level,
+                current_utilization
             };
         });
 

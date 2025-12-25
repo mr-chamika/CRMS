@@ -7,6 +7,7 @@ CREATE TABLE personnel (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255),
     role_title VARCHAR(255),
     experience_level ENUM('Junior', 'Mid-Level', 'Senior') DEFAULT 'Junior',
     status ENUM('Available', 'Busy', 'On Leave') DEFAULT 'Available',
@@ -51,28 +52,13 @@ CREATE TABLE project_requirements (
     FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE
 );
 
--- Sample data
-INSERT INTO personnel (name, email, role_title, experience_level, status) VALUES
-('John Doe', 'john@example.com', 'Developer', 'Senior', 'Available'),
-('Jane Smith', 'jane@example.com', 'Designer', 'Mid-Level', 'Busy'),
-('Bob Johnson', 'bob@example.com', 'Manager', 'Senior', 'On Leave');
+-- Table: project_assignments
+CREATE TABLE project_assignments (
+    project_id INT,
+    personnel_id INT,
+    capacity_percentage DECIMAL(5,2) CHECK (capacity_percentage BETWEEN 0 AND 100),
+    PRIMARY KEY (project_id, personnel_id),
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE CASCADE
+);
 
-INSERT INTO skills (skill_name, category, description) VALUES
-('JavaScript', 'Programming', 'Web development language'),
-('React', 'Frontend', 'UI library'),
-('Node.js', 'Backend', 'Server-side JavaScript'),
-('MySQL', 'Database', 'Relational database'),
-('Python', 'Programming', 'General-purpose language');
-
-INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level) VALUES
-(1, 1, 4), (1, 2, 3), (1, 3, 4), (1, 4, 3),
-(2, 1, 3), (2, 2, 4),
-(3, 4, 3), (3, 5, 2);
-
-INSERT INTO projects (name, description, start_date, end_date, status) VALUES
-('Web App Development', 'Build a web application', '2024-01-01', '2024-06-01', 'Active'),
-('Mobile App', 'Develop mobile application', '2024-03-01', '2024-09-01', 'Planning');
-
-INSERT INTO project_requirements (project_id, skill_id, min_proficiency_level) VALUES
-(1, 1, 3), (1, 2, 3), (1, 3, 3),
-(2, 1, 2), (2, 5, 2);

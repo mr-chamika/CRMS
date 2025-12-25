@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import Modal from './Modal';
-
-const API_BASE = 'http://localhost:5000/api';
+import api from '../utils/api';
 
 function PersonnelList() {
     const [personnel, setPersonnel] = useState([]);
@@ -34,7 +32,7 @@ function PersonnelList() {
 
     const fetchPersonnel = async () => {
         try {
-            const response = await axios.get(`${API_BASE}/personnel`);
+            const response = await api.get('/personnel');
             setPersonnel(response.data);
         } catch (error) {
             console.error('Error fetching personnel:', error);
@@ -43,7 +41,7 @@ function PersonnelList() {
 
     const fetchSkills = async () => {
         try {
-            const response = await axios.get(`${API_BASE}/skills`);
+            const response = await api.get('/skills');
             setSkills(response.data);
         } catch (error) {
             console.error('Error fetching skills:', error);
@@ -52,7 +50,7 @@ function PersonnelList() {
 
     const fetchPersonnelSkills = async (personnelId) => {
         try {
-            const response = await axios.get(`${API_BASE}/personnel/${personnelId}/skills`);
+            const response = await api.get(`/personnel/${personnelId}/skills`);
             return response.data;
         } catch (error) {
             console.error('Error fetching personnel skills:', error);
@@ -118,18 +116,18 @@ function PersonnelList() {
             };
 
             if (editing) {
-                await axios.put(`${API_BASE}/personnel/${editing}`, personnelData);
+                await api.put(`/personnel/${editing}`, personnelData);
                 // Update skills - filter out empty skill slots
                 const validSkills = form.skills.filter(skill => skill.skill_id && String(skill.skill_id).trim() !== '');
-                await axios.put(`${API_BASE}/personnel/${editing}/skills`, { skills: validSkills });
+                await api.put(`/personnel/${editing}/skills`, { skills: validSkills });
                 setEditing(null);
             } else {
-                const response = await axios.post(`${API_BASE}/personnel`, personnelData);
+                const response = await api.post('/personnel', personnelData);
                 const personnelId = response.data.id;
                 // Add skills for new personnel - filter out empty skill slots
                 const validSkills = form.skills.filter(skill => skill.skill_id && skill.skill_id.trim() !== '');
                 if (validSkills.length > 0) {
-                    await axios.put(`${API_BASE}/personnel/${personnelId}/skills`, { skills: validSkills });
+                    await api.put(`/personnel/${personnelId}/skills`, { skills: validSkills });
                 }
             }
             setForm({
@@ -174,7 +172,7 @@ function PersonnelList() {
         if (!window.confirm('Are you sure you want to delete this personnel?')) return;
 
         try {
-            await axios.delete(`${API_BASE}/personnel/${id}`);
+            await api.delete(`/personnel/${id}`);
             fetchPersonnel();
         } catch (error) {
             console.error('Error deleting personnel:', error);
@@ -220,7 +218,7 @@ function PersonnelList() {
         setViewing(null);
     };
 
-    const filteredPersonnel = personnel.filter(person => {
+    const filteredPersonnel = (personnel || []).filter(person => {
         const matchesSearch = !filters.search ||
             person.name.toLowerCase().includes(filters.search.toLowerCase()) ||
             person.email.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -348,7 +346,7 @@ function PersonnelList() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredPersonnel.map((person) => (
+                            {filteredPersonnel && filteredPersonnel.length > 0 && filteredPersonnel.map((person) => (
                                 <tr key={person.id} className="hover:bg-gray-50">
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle">{person.name}</td>
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle">{person.email}</td>
@@ -386,8 +384,9 @@ function PersonnelList() {
                     </table>
                     {filteredPersonnel.length === 0 && (
                         <div className="text-center py-16 text-gray-500">
-                            {personnel.length === 0 ? (
-                                <p className="text-lg m-0">No personnel found. Click "Add New Personnel" to get started.</p>
+                            {(personnel || []).length === 0 ? (
+                                <p className="text-lg m-0">No personnel found.</p>
+                                // <p className="text-lg m-0">No personnel found. Click "Add New Personnel" to get started.</p>
                             ) : (
                                 <div>
                                     <p className="text-lg m-0 mb-2">No personnel match your filters.</p>
@@ -483,7 +482,7 @@ function PersonnelList() {
                     <div className="mb-4">
                         <label className="font-semibold mb-2 text-gray-700 text-sm block">Personnel Skills</label>
                         <div className="space-y-3">
-                            {form.skills.map((skill, index) => (
+                            {form.skills && form.skills.length > 0 && form.skills.map((skill, index) => (
                                 <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                                     <div className="flex-1">
                                         <select
@@ -492,7 +491,7 @@ function PersonnelList() {
                                             className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
                                         >
                                             <option value="">Select Skill</option>
-                                            {skills.map((s) => (
+                                            {skills && skills.length > 0 && skills.map((s) => (
                                                 <option key={s.id} value={s.id}>
                                                     {s.skill_name}
                                                 </option>
@@ -631,7 +630,7 @@ function PersonnelList() {
                             {viewing.skills && viewing.skills.length > 0 ? (
                                 <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg bg-white">
                                     <div className="divide-y divide-gray-100">
-                                        {viewing.skills.map((skill, index) => (
+                                        {viewing.skills && viewing.skills.length > 0 && viewing.skills.map((skill, index) => (
                                             <div key={index} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-150">
                                                 <div className="flex items-center flex-1">
                                                     <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-md flex items-center justify-center text-white font-bold text-xs mr-3">

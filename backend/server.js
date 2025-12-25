@@ -32,6 +32,7 @@ async function initializeDatabase() {
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 name VARCHAR(255) NOT NULL,
                 email VARCHAR(255) NOT NULL UNIQUE,
+                password VARCHAR(255),
                 role_title VARCHAR(255),
                 experience_level ENUM('Junior', 'Mid-Level', 'Senior') DEFAULT 'Junior',
                 status ENUM('Available', 'Busy', 'On Leave') DEFAULT 'Available',
@@ -39,11 +40,12 @@ async function initializeDatabase() {
             )
         `);
 
-        // Add status column if it doesn't exist (for existing tables)
+        // Add password column to existing table if it doesn't exist
         try {
-            await db.execute(`ALTER TABLE personnel ADD COLUMN IF NOT EXISTS status ENUM('Available', 'Busy', 'On Leave') DEFAULT 'Available'`);
+            await db.execute(`ALTER TABLE personnel ADD COLUMN IF NOT EXISTS password VARCHAR(255)`);
         } catch (error) {
-            // Column might already exist, ignore
+            // Column might already exist, ignore error
+            console.log('Password column check/alter completed');
         }
 
         await db.execute(`
@@ -88,6 +90,18 @@ async function initializeDatabase() {
             )
         `);
 
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS project_assignments (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                project_id INT,
+                personnel_id INT,
+                capacity_percentage INT DEFAULT 100 CHECK (capacity_percentage BETWEEN 0 AND 100),
+                assigned_date DATE DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+                FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE CASCADE
+            )
+        `);
+
         console.log('Database tables initialized');
     } catch (error) {
         console.error('Error initializing database:', error);
@@ -95,9 +109,14 @@ async function initializeDatabase() {
 }
 
 // Routes
+const { router: authRouter, verifyToken } = require('./controllers/auth');
+app.use('/api/auth', authRouter);
 app.use('/api/personnel', require('./controllers/personnel'));
 app.use('/api/skills', require('./controllers/skills'));
 app.use('/api/projects', require('./controllers/projects'));
+
+// Make verifyToken available globally for other controllers
+global.verifyToken = verifyToken;
 
 // Start server
 connectDB().then(() => {
