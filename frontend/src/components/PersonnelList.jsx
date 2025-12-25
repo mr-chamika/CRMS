@@ -19,6 +19,13 @@ function PersonnelList() {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [showModal, setShowModal] = useState(false);
+    const [viewing, setViewing] = useState(null);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [filters, setFilters] = useState({
+        search: '',
+        experience_level: '',
+        status: ''
+    });
 
     useEffect(() => {
         fetchPersonnel();
@@ -174,19 +181,19 @@ function PersonnelList() {
         }
     };
 
-    const handleAddNew = () => {
-        setForm({
-            name: '',
-            email: '',
-            role_title: '',
-            experience_level: 'Junior',
-            status: 'Available',
-            skills: [{ skill_id: '', proficiency_level: 1 }]
-        });
-        setEditing(null);
-        setErrors({});
-        setShowModal(true);
-    };
+    // const handleAddNew = () => {
+    //     setForm({
+    //         name: '',
+    //         email: '',
+    //         role_title: '',
+    //         experience_level: 'Junior',
+    //         status: 'Available',
+    //         skills: [{ skill_id: '', proficiency_level: 1 }]
+    //     });
+    //     setEditing(null);
+    //     setErrors({});
+    //     setShowModal(true);
+    // };
 
     const handleCloseModal = () => {
         setShowModal(false);
@@ -200,6 +207,44 @@ function PersonnelList() {
             skills: [{ skill_id: '', proficiency_level: 1 }]
         });
         setErrors({});
+    };
+
+    const handleView = async (person) => {
+        const personnelSkills = await fetchPersonnelSkills(person.id);
+        setViewing({ ...person, skills: personnelSkills });
+        setShowViewModal(true);
+    };
+
+    const handleCloseViewModal = () => {
+        setShowViewModal(false);
+        setViewing(null);
+    };
+
+    const filteredPersonnel = personnel.filter(person => {
+        const matchesSearch = !filters.search ||
+            person.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+            person.email.toLowerCase().includes(filters.search.toLowerCase()) ||
+            (person.role_title && person.role_title.toLowerCase().includes(filters.search.toLowerCase()));
+
+        const matchesExperience = !filters.experience_level || person.experience_level === filters.experience_level;
+        const matchesStatus = !filters.status || person.status === filters.status;
+
+        return matchesSearch && matchesExperience && matchesStatus;
+    });
+
+    const handleFilterChange = (field, value) => {
+        setFilters(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            search: '',
+            experience_level: '',
+            status: ''
+        });
     };
 
     const addSkill = () => {
@@ -240,7 +285,56 @@ function PersonnelList() {
             </div>
 
             <div className="flex-1 bg-white rounded-xl p-8 shadow-lg border border-gray-200 overflow-hidden flex flex-col">
-                <h3 className="text-xl font-bold text-gray-800 mb-5">Personnel List ({personnel.length})</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                    <h3 className="text-xl font-bold text-gray-800 m-0">Personnel List ({filteredPersonnel.length})</h3>
+
+                    {/* Filter Controls */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="Search by name, email, or role..."
+                                value={filters.search}
+                                onChange={(e) => handleFilterChange('search', e.target.value)}
+                                className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </div>
+
+                        <select
+                            value={filters.experience_level}
+                            onChange={(e) => handleFilterChange('experience_level', e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">All Experience Levels</option>
+                            <option value="Junior">Junior</option>
+                            <option value="Mid-Level">Mid-Level</option>
+                            <option value="Senior">Senior</option>
+                        </select>
+
+                        <select
+                            value={filters.status}
+                            onChange={(e) => handleFilterChange('status', e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                            <option value="">All Statuses</option>
+                            <option value="Available">Available</option>
+                            <option value="Busy">Busy</option>
+                            <option value="On Leave">On Leave</option>
+                        </select>
+
+                        {(filters.search || filters.experience_level || filters.status) && (
+                            <button
+                                onClick={clearFilters}
+                                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                            >
+                                Clear Filters
+                            </button>
+                        )}
+                    </div>
+                </div>
                 <div className="overflow-auto max-h-80">
                     <table className="w-full border-collapse text-sm">
                         <thead>
@@ -250,12 +344,11 @@ function PersonnelList() {
                                 <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Role</th>
                                 <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Experience</th>
                                 <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Status</th>
-                                <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Created</th>
                                 <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {personnel.map((person) => (
+                            {filteredPersonnel.map((person) => (
                                 <tr key={person.id} className="hover:bg-gray-50">
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle">{person.name}</td>
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle">{person.email}</td>
@@ -276,8 +369,10 @@ function PersonnelList() {
                                             {person.status}
                                         </span>
                                     </td>
-                                    <td className="py-4 px-3 border-b border-gray-200 align-middle">{new Date(person.created_at).toLocaleDateString()}</td>
                                     <td className="py-4 px-3 border-b border-gray-200 align-middle">
+                                        <button onClick={() => handleView(person)} className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg text-sm mr-2 transition-colors duration-200">
+                                            View
+                                        </button>
                                         <button onClick={() => handleEdit(person)} className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg text-sm mr-2 transition-colors duration-200">
                                             Edit
                                         </button>
@@ -289,9 +384,16 @@ function PersonnelList() {
                             ))}
                         </tbody>
                     </table>
-                    {personnel.length === 0 && (
+                    {filteredPersonnel.length === 0 && (
                         <div className="text-center py-16 text-gray-500">
-                            <p className="text-lg m-0">No personnel found. Click "Add New Personnel" to get started.</p>
+                            {personnel.length === 0 ? (
+                                <p className="text-lg m-0">No personnel found. Click "Add New Personnel" to get started.</p>
+                            ) : (
+                                <div>
+                                    <p className="text-lg m-0 mb-2">No personnel match your filters.</p>
+                                    <p className="text-sm text-gray-400">Try adjusting your search criteria or clearing the filters.</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -446,6 +548,129 @@ function PersonnelList() {
                         </button>
                     </div>
                 </form>
+            </Modal>
+
+            <Modal
+                isOpen={showViewModal}
+                onClose={handleCloseViewModal}
+                title="Personnel Details"
+            >
+                {viewing && (
+                    <div className="space-y-3">
+                        {/* Header Section with Avatar */}
+                        <div className="text-center pb-4 border-b border-gray-200">
+                            {/* <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-2xl font-bold">
+                                {viewing.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            </div> */}
+                            <h3 className="text-xl font-bold text-gray-800 mb-1">{viewing.name}</h3>
+                            <p className="text-gray-600">{viewing.role_title || 'No role specified'}</p>
+                        </div>
+
+                        {/* Status and Experience Badges */}
+                        <div className="flex flex-wrap gap-3 justify-center">
+                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${viewing.status === 'Available' ? 'bg-green-100 text-green-800 border border-green-200' :
+                                viewing.status === 'Busy' ? 'bg-red-100 text-red-800 border border-red-200' :
+                                    'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                                }`}>
+                                <span className={`w-2 h-2 rounded-full mr-2 ${viewing.status === 'Available' ? 'bg-green-500' :
+                                    viewing.status === 'Busy' ? 'bg-red-500' :
+                                        'bg-yellow-500'
+                                    }`}></span>
+                                {viewing.status}
+                            </span>
+                            <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${viewing.experience_level.toLowerCase().replace('-', '') === 'junior' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                                viewing.experience_level.toLowerCase().replace('-', '') === 'midlevel' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                                    'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                                }`}>
+                                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                                {viewing.experience_level}
+                            </span>
+                        </div>
+
+                        {/* Information Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                                <div className="flex items-center mb-2">
+                                    <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                    </svg>
+                                    <label className="font-semibold text-blue-800 text-sm">Email Address</label>
+                                </div>
+                                <p className="text-gray-900 font-medium">{viewing.email}</p>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100">
+                                <div className="flex items-center mb-2">
+                                    <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    <label className="font-semibold text-green-800 text-sm">Registered At</label>
+                                </div>
+                                <p className="text-gray-900 font-medium">{new Date(viewing.created_at).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                })}</p>
+                            </div>
+                        </div>
+
+                        {/* Skills Section */}
+                        <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-6 rounded-xl border border-gray-200">
+                            <div className="flex items-center mb-4">
+                                <svg className="w-6 h-6 text-gray-700 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                </svg>
+                                <h4 className="text-lg font-bold text-gray-800">Skills & Expertise</h4>
+                                <span className="ml-auto bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
+                                    {viewing.skills?.length || 0} skills
+                                </span>
+                            </div>
+
+                            {viewing.skills && viewing.skills.length > 0 ? (
+                                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                                    <div className="divide-y divide-gray-100">
+                                        {viewing.skills.map((skill, index) => (
+                                            <div key={index} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-150">
+                                                <div className="flex items-center flex-1">
+                                                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-md flex items-center justify-center text-white font-bold text-xs mr-3">
+                                                        {skill.skill_name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className="font-medium text-gray-900">{skill.skill_name}</span>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <div className="flex space-x-1 mr-3">
+                                                        {[1, 2, 3, 4].map((level) => (
+                                                            <div
+                                                                key={level}
+                                                                className={`w-2 h-2 rounded-full ${level <= skill.proficiency_level
+                                                                    ? 'bg-yellow-400'
+                                                                    : 'bg-gray-300'
+                                                                    }`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <span className="text-sm text-gray-600 font-medium">
+                                                        {skill.proficiency_level}/4
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                                    <svg className="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                                    </svg>
+                                    <p className="text-gray-500 font-medium">No skills assigned yet</p>
+                                    <p className="text-gray-400 text-sm">Skills will appear here when added</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );
