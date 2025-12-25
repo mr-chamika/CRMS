@@ -33,7 +33,8 @@ function PersonnelList() {
     const fetchPersonnel = async () => {
         try {
             const response = await api.get('/personnel');
-            setPersonnel(response.data);
+            const data = await response.json();
+            setPersonnel(data);
         } catch (error) {
             console.error('Error fetching personnel:', error);
         }
@@ -51,7 +52,8 @@ function PersonnelList() {
     const fetchPersonnelSkills = async (personnelId) => {
         try {
             const response = await api.get(`/personnel/${personnelId}/skills`);
-            return response.data;
+            const data = await response.json();
+            return data;
         } catch (error) {
             console.error('Error fetching personnel skills:', error);
             return [];
@@ -628,7 +630,7 @@ function PersonnelList() {
                             </div>
 
                             {viewing.skills && viewing.skills.length > 0 ? (
-                                <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg bg-white">
+                                <div className="border border-gray-200 rounded-lg bg-white">
                                     <div className="divide-y divide-gray-100">
                                         {viewing.skills && viewing.skills.length > 0 && viewing.skills.map((skill, index) => (
                                             <div key={index} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-150">

@@ -8,7 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 // Signup route
 router.post('/signup', async (req, res) => {
-    const { name, email, password, role_title, experience_level, status } = req.body;
+    const { name, email, password, role_title, experience_level, status, skills } = req.body;
 
     try {
         const db = await getDB();
@@ -33,9 +33,28 @@ router.post('/signup', async (req, res) => {
             [name, email, hashedPassword, role_title, experience_level || 'Junior', status || 'Available']
         );
 
+        const userId = result.insertId;
+
+        // Insert skills if provided
+        if (skills && skills.length > 0) {
+            const skillValues = skills
+                .filter(skill => skill.skill_id && skill.skill_id !== '')
+                .map(skill => [userId, parseInt(skill.skill_id), parseInt(skill.proficiency_level) || 1]);
+
+            if (skillValues.length > 0) {
+                const placeholders = skillValues.map(() => '(?, ?, ?)').join(', ');
+                const flattenedValues = skillValues.flat();
+
+                await db.execute(
+                    `INSERT INTO personnel_skills (personnel_id, skill_id, proficiency_level) VALUES ${placeholders}`,
+                    flattenedValues
+                );
+            }
+        }
+
         // Generate JWT token
         const token = jwt.sign(
-            { id: result.insertId, email, role: role_title },
+            { id: userId, email, role: role_title },
             JWT_SECRET,
             { expiresIn: '24h' }
         );
@@ -44,7 +63,7 @@ router.post('/signup', async (req, res) => {
             message: 'User created successfully',
             token,
             user: {
-                id: result.insertId,
+                id: userId,
                 name,
                 email,
                 role_title,

@@ -40,14 +40,6 @@ async function initializeDatabase() {
             )
         `);
 
-        // Add password column to existing table if it doesn't exist
-        try {
-            await db.execute(`ALTER TABLE personnel ADD COLUMN IF NOT EXISTS password VARCHAR(255)`);
-        } catch (error) {
-            // Column might already exist, ignore error
-            console.log('Password column check/alter completed');
-        }
-
         await db.execute(`
             CREATE TABLE IF NOT EXISTS skills (
                 id INT PRIMARY KEY AUTO_INCREMENT,
@@ -100,6 +92,35 @@ async function initializeDatabase() {
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
                 FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE CASCADE
             )
+        `);
+
+        // Insert default skills if not exists
+        await db.execute(`
+            INSERT IGNORE INTO skills (skill_name, category) VALUES
+            ('JavaScript', 'Programming'),
+            ('Python', 'Programming'),
+            ('Java', 'Programming'),
+            ('C#', 'Programming'),
+            ('React', 'Frontend'),
+            ('Angular', 'Frontend'),
+            ('Vue.js', 'Frontend'),
+            ('Node.js', 'Backend'),
+            ('Express.js', 'Backend'),
+            ('Django', 'Backend'),
+            ('Spring Boot', 'Backend'),
+            ('SQL', 'Database'),
+            ('MongoDB', 'Database'),
+            ('PostgreSQL', 'Database'),
+            ('MySQL', 'Database'),
+            ('HTML', 'Frontend'),
+            ('CSS', 'Frontend'),
+            ('Git', 'Tools'),
+            ('Docker', 'Tools'),
+            ('AWS', 'Cloud'),
+            ('Azure', 'Cloud'),
+            ('Linux', 'System'),
+            ('Agile', 'Methodology'),
+            ('Scrum', 'Methodology')
         `);
 
         console.log('Database tables initialized');

@@ -32,7 +32,8 @@ function ProjectList() {
     const fetchProjects = async () => {
         try {
             const response = await api.get('/projects');
-            setProjects(response.data || []);
+            const data = await response.json();
+            setProjects(data || []);
         } catch (error) {
             console.error('Error fetching projects:', error);
             setProjects([]);
@@ -42,7 +43,8 @@ function ProjectList() {
     const fetchSkills = async () => {
         try {
             const response = await api.get('/skills');
-            setSkills(response.data || []);
+            const data = await response.json();
+            setSkills(data || []);
         } catch (error) {
             console.error('Error fetching skills:', error);
             setSkills([]);
@@ -52,7 +54,8 @@ function ProjectList() {
     const fetchProjectRequirements = async (projectId) => {
         try {
             const response = await api.get(`/projects/${projectId}/requirements`);
-            return response.data;
+            const data = await response.json();
+            return data;
         } catch (error) {
             console.error('Error fetching project requirements:', error);
             return [];
@@ -152,7 +155,8 @@ function ProjectList() {
                 setEditing(null);
             } else {
                 const response = await api.post('/projects', projectData);
-                const projectId = response.data.id;
+                const data = await response.json();
+                const projectId = data.id;
                 // Add requirements for new project
                 if (form.requirements.length > 0) {
                     await api.post(`/projects/${projectId}/requirements`, { requirements: form.requirements });

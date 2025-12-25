@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const Auth = ({ onLogin }) => {
     const [isLogin, setIsLogin] = useState(true);
@@ -8,17 +8,56 @@ const Auth = ({ onLogin }) => {
         password: '',
         role_title: '',
         experience_level: 'Junior',
-        status: 'Available'
+        status: 'Available',
+        skills: [{ skill_id: '', proficiency_level: 1 }]
     });
+    const [skills, setSkills] = useState([]);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (!isLogin) {
+            fetchSkills();
+        }
+    }, [isLogin]);
+
+    const fetchSkills = async () => {
+        try {
+            const response = await fetch('http://localhost:5000/api/skills');
+            const data = await response.json();
+            setSkills(data || []);
+            console.log(data)
+        } catch (error) {
+            console.error('Error fetching skills:', error);
+        }
+    };
 
     const handleChange = (e) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         });
+    };
+
+    const addSkill = () => {
+        setFormData({
+            ...formData,
+            skills: [...formData.skills, { skill_id: '', proficiency_level: 1 }]
+        });
+    };
+
+    const updateSkill = (index, field, value) => {
+        const updatedSkills = [...formData.skills];
+        updatedSkills[index] = { ...updatedSkills[index], [field]: value };
+        setFormData({ ...formData, skills: updatedSkills });
+    };
+
+    const removeSkill = (index) => {
+        if (formData.skills.length > 1) {
+            const updatedSkills = formData.skills.filter((_, i) => i !== index);
+            setFormData({ ...formData, skills: updatedSkills });
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -59,7 +98,7 @@ const Auth = ({ onLogin }) => {
     return (
         <div className="flex flex-col h-full max-w-6xl mx-auto p-5">
             <div className="flex justify-center items-center flex-1">
-                <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 w-full max-w-md">
+                <div className="bg-white rounded-xl px-8 mb-3 py-6 shadow-lg border border-gray-200 w-full max-w-md">
                     <div className="text-center mb-8">
                         <h2 className="text-2xl font-bold text-gray-800 m-0 mb-2">
                             {isLogin ? 'Sign in to your account' : 'Create your account'}
@@ -73,7 +112,7 @@ const Auth = ({ onLogin }) => {
                             </div>
                         )}
 
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             {!isLogin && (
                                 <div>
                                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -148,15 +187,25 @@ const Auth = ({ onLogin }) => {
                                         <label htmlFor="role_title" className="block text-sm font-medium text-gray-700 mb-2">
                                             Role Title
                                         </label>
-                                        <input
+                                        <select
                                             id="role_title"
                                             name="role_title"
-                                            type="text"
                                             className="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            placeholder="e.g., Software Engineer, Project Manager"
                                             value={formData.role_title}
                                             onChange={handleChange}
-                                        />
+                                        >
+                                            <option value="">Select a role</option>
+                                            <option value="Software Engineer">Software Engineer</option>
+                                            <option value="Project Manager">Project Manager</option>
+                                            <option value="UI/UX Designer">UI/UX Designer</option>
+                                            <option value="Data Analyst">Data Analyst</option>
+                                            <option value="DevOps Engineer">DevOps Engineer</option>
+                                            <option value="QA Engineer">QA Engineer</option>
+                                            <option value="Business Analyst">Business Analyst</option>
+                                            <option value="Product Manager">Product Manager</option>
+                                            <option value="System Administrator">System Administrator</option>
+                                            <option value="Database Administrator">Database Administrator</option>
+                                        </select>
                                     </div>
 
                                     <div>
@@ -175,11 +224,89 @@ const Auth = ({ onLogin }) => {
                                             <option value="Senior">Senior</option>
                                         </select>
                                     </div>
+
+                                    <div>
+                                        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Availability Status *
+                                        </label>
+                                        <select
+                                            id="status"
+                                            name="status"
+                                            className="w-full p-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            value={formData.status}
+                                            onChange={handleChange}
+                                        >
+                                            <option value="Available">Available</option>
+                                            <option value="Busy">Busy</option>
+                                            <option value="On Leave">On Leave</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Personnel Skills
+                                        </label>
+                                        <div className="space-y-3">
+                                            {formData.skills && formData.skills.length > 0 && formData.skills.map((skill, index) => (
+                                                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                                    <div className="flex-1">
+                                                        <select
+                                                            value={skill.skill_id}
+                                                            onChange={(e) => updateSkill(index, 'skill_id', e.target.value)}
+                                                            className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
+                                                        >
+                                                            <option value="">Select Skill</option>
+                                                            {skills && skills.length > 0 && skills.map((s) => (
+                                                                <option key={s.id} value={s.id}>
+                                                                    {s.skill_name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <label className="text-sm text-gray-600">Level:</label>
+                                                        <select
+                                                            value={skill.proficiency_level}
+                                                            onChange={(e) => updateSkill(index, 'proficiency_level', parseInt(e.target.value))}
+                                                            className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
+                                                        >
+                                                            <option value={1}>Beginner (1)</option>
+                                                            <option value={2}>Intermediate (2)</option>
+                                                            <option value={3}>Advanced (3)</option>
+                                                            <option value={4}>Expert (4)</option>
+                                                        </select>
+                                                    </div>
+                                                    {formData.skills.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeSkill(index)}
+                                                            className="text-red-500 hover:text-red-700 p-1"
+                                                            title="Remove skill"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            <button
+                                                type="button"
+                                                onClick={addSkill}
+                                                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                                Add Skill
+                                            </button>
+                                        </div>
+                                    </div>
                                 </>
                             )}
                         </div>
 
-                        <div className="pt-4">
+                        <div className="pt-0">
                             <button
                                 type="submit"
                                 disabled={loading}
@@ -194,7 +321,7 @@ const Auth = ({ onLogin }) => {
                                         Processing...
                                     </>
                                 ) : (
-                                    isLogin ? 'Sign In' : 'Create Account'
+                                    isLogin ? 'Sign In' : 'Sign Up'
                                 )}
                             </button>
                         </div>

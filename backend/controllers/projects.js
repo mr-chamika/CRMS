@@ -128,7 +128,7 @@ router.get('/:id/matching', async (req, res) => {
                 total_required_skills: requirements.length,
                 utilization_warning,
                 utilization_level,
-                current_utilization
+                currentUtilization
             };
         });
 

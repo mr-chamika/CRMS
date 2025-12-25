@@ -18,7 +18,7 @@ function App() {
             setUser(JSON.parse(savedUser));
         }
         setLoading(false);
-    }, [user]);
+    }, []);
 
     const handleLogin = (userData) => {
         setUser(userData);

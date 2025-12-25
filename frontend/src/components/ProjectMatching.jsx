@@ -15,7 +15,8 @@ function ProjectMatching() {
     const fetchProjects = async () => {
         try {
             const response = await api.get('/projects');
-            setProjects(response.data || []);
+            const data = await response.json();
+            setProjects(data || []);
         } catch (error) {
             console.error('Error fetching projects:', error);
             setProjects([]);
@@ -31,7 +32,8 @@ function ProjectMatching() {
 
         try {
             const response = await api.get(`/projects/${selectedProject}/matching`);
-            setMatching(response.data || { personnel: [], requirements: [] });
+            const data = await response.json();
+            setMatching(data || { personnel: [], requirements: [] });
         } catch (error) {
             console.error('Error fetching matching:', error);
             setError('Failed to fetch matching results. Please try again.');
