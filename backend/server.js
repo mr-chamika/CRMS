@@ -97,18 +97,6 @@ async function initializeDatabase() {
             )
         `);
 
-        // Add date columns if they don't exist (for existing databases)
-        try {
-            await db.execute(`
-                ALTER TABLE project_assignments
-                ADD COLUMN IF NOT EXISTS assigned_start_date DATE,
-                ADD COLUMN IF NOT EXISTS assigned_end_date DATE
-            `);
-        } catch (error) {
-            // Columns might already exist, ignore error
-            console.log('Date columns check completed');
-        }
-
         // Insert default skills if not exists
         await db.execute(`
             INSERT IGNORE INTO skills (skill_name, category) VALUES

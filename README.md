@@ -19,61 +19,69 @@ The Consultancy Resource & Skill Management System (CRMS) is a full-stack web ap
 ---
 
 ## 3. Prerequisites
-- **Node.js** v18+ (v20.12.2 installed)  
-- **MySQL / MariaDB** v10+ (v10.4.28 via XAMPP)  
+- **Node.js:** v18+ (v20.12.2 installed)  
+- **MySQL / MariaDB:** v10+ (v10.4.28 via XAMPP)  
 
 ---
 
 ## 4. Core Features (Required)
 
-**Manager**
+### Manager
 
-### 4.1 Personnel Management
+#### 4.1 Personnel Management
 - Create new personnel  
 - Update personnel information  
 - Delete personnel  
 - View personnel list  
 
-### 4.2 Skill Management
+#### 4.2 Skill Management
 - Add new skills to the catalog  
 - Update or delete skills  
-- Assign skills to personnel with proficiency level  
+- Assign skills to personnel with proficiency levels  
 
-### 4.3 Project Management
+#### 4.3 Project Management
 - Create new projects with:
   - Name, description, start/end dates, status  
 - Define required skills for each project  
 - Update projects  
 - Delete projects  
 
-### 4.4 Basic Matching Algorithm
-- Match personnel who have all required skills  
-- Filter by minimum proficiency  
-- Display match results clearly (person name, role, skills, proficiency)   
+#### 4.4 Basic Matching Algorithm
+- Match personnel who have **all required skills**  
+- Filter matches by **minimum proficiency level(customizable)**  
+- Display results clearly, including:
+  - Personnel name and role  
+  - Matched skills  
+  - Proficiency levels  
 
 ---
 
 ## 5. Additional Features (Enhancements)
 
-**Manager**
+### Manager
 - **Utilization Visualization:**  
-  - Show personnel availability over the next 3 months  
-  - Highlight “Busy” vs “Available” blocks  
+  - Highlight personnel utilization status (Busy vs Available)  
+  - Display utilization percentages(workload have assigned) based on project assignments  
+
 - **Match Scoring / Percentage:**  
-  - Calculate a match score for personnel based on how many project requirements they satisfy  
+  - Calculate a match score based on how many project requirements are satisfied  
+
 - **Optional Sorting / Filtering:**  
   - Sort personnel by experience, skill proficiency, or match score  
+
 - **Secure Password Handling:**  
-  - Hash passwords using bcrypt (enhancement for security)  
-- **Authentication(Login)**  
+  - Passwords are hashed using bcrypt  
 
+- **Authentication (Login):**  
+  - Manager login using email and password  
+  - **Email verification is not implemented**, as the system is designed for **internal organizational use**  
+  - Email verification and OTP-based authentication can be added as a future enhancement  
 
-**Employee (Optional)**
+### Employee (Optional / Future)
 - View own profile  
 - Track assigned projects  
-- Update availability or personal info  
-- Authentication(Login and Sign Up)
-
+- Update availability or personal information  
+- Authentication (Login and Sign Up)
 ---
 
 ## 6. How to Run the System
@@ -88,11 +96,14 @@ The Consultancy Resource & Skill Management System (CRMS) is a full-stack web ap
 - cd backend and in terminal type "npm install", press Enter.
 
 3. Environment Configuration
+- Create a `.env` file in the `backend/` directory with the following variables:
 - DB_HOST=localhost
 - DB_USER=root
 - DB_PASSWORD=
 - DB_NAME=db
 - PORT=5000
+- JWT_SECRET=thisisaverybigseceretfor4bexcompanyassignment
+- DB_PORT=3306
 
 4.Database Initialization
 
@@ -104,7 +115,7 @@ The Consultancy Resource & Skill Management System (CRMS) is a full-stack web ap
 
 5.Execution
 
-- Both frontend and backend terminal's type "npm start" and press Enter.
+- Both frontend and backend terminal's type "npm run dev" and press Enter.
 
 - frontend runs => http://localhost:3000/
 - backend runs => http://localhost:5000/
