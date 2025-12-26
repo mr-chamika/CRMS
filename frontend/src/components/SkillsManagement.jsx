@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
+import ConfirmationModal from './ConfirmationModal';
 import api from '../utils/api';
 
 function SkillsManagement() {
@@ -8,6 +9,8 @@ function SkillsManagement() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [selectedSkill, setSelectedSkill] = useState(null);
+    const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, skill: null });
+    const [categoryDeleteModalState, setCategoryDeleteModalState] = useState({ isOpen: false, skill: null });
     const [formData, setFormData] = useState({
         skill_name: '',
         category: '',
@@ -57,11 +60,26 @@ function SkillsManagement() {
         }
     };
 
-    const handleDeleteSkill = async (skillId) => {
-        if (window.confirm('Are you sure you want to delete this skill?')) {
+    const handleDeleteSkill = (skill) => {
+        const skillsInCategory = skills.filter(s => s.category === skill.category);
+        if (skillsInCategory.length === 1) {
+            setCategoryDeleteModalState({ isOpen: true, skill: skill });
+        } else {
+            setDeleteModalState({ isOpen: true, skill: skill });
+        }
+    };
+
+    const confirmDeleteCategory = () => {
+        setCategoryDeleteModalState({ isOpen: false, skill: null });
+        setDeleteModalState({ isOpen: true, skill: categoryDeleteModalState.skill });
+    };
+
+    const confirmDeleteSkill = async () => {
+        if (deleteModalState.skill) {
             try {
-                await api.delete(`/skills/${skillId}`);
+                await api.delete(`/skills/${deleteModalState.skill.id}`);
                 fetchSkills();
+                setDeleteModalState({ isOpen: false, skill: null });
             } catch (error) {
                 console.error('Error deleting skill:', error);
             }
@@ -145,9 +163,9 @@ function SkillsManagement() {
                                 <div className="flex justify-between items-start mb-4">
                                     <h3 className="text-xl font-bold text-gray-800">{skill.skill_name}</h3>
                                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${skill.category === 'Technical' ? 'bg-blue-100 text-blue-800' :
-                                            skill.category === 'Soft Skills' ? 'bg-green-100 text-green-800' :
-                                                skill.category === 'Domain' ? 'bg-purple-100 text-purple-800' :
-                                                    'bg-gray-100 text-gray-800'
+                                        skill.category === 'Soft Skills' ? 'bg-green-100 text-green-800' :
+                                            skill.category === 'Domain' ? 'bg-purple-100 text-purple-800' :
+                                                'bg-gray-100 text-gray-800'
                                         }`}>
                                         {skill.category}
                                     </span>
@@ -161,7 +179,7 @@ function SkillsManagement() {
                                         Edit
                                     </button>
                                     <button
-                                        onClick={() => handleDeleteSkill(skill.id)}
+                                        onClick={() => handleDeleteSkill(skill)}
                                         className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 text-sm"
                                     >
                                         Delete
@@ -321,6 +339,32 @@ function SkillsManagement() {
                     </div>
                 </form>
             </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={deleteModalState.isOpen}
+                onClose={() => {
+                    setDeleteModalState({ isOpen: false, skill: null });
+                }}
+                onConfirm={confirmDeleteSkill}
+                title="Delete Skill"
+                message={`Are you sure you want to delete "${deleteModalState.skill?.skill_name}"? This action cannot be undone.`}
+                confirmText="Delete Skill"
+                cancelText="Cancel"
+            />
+
+            {/* Category Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={categoryDeleteModalState.isOpen}
+                onClose={() => {
+                    setCategoryDeleteModalState({ isOpen: false, skill: null });
+                }}
+                onConfirm={confirmDeleteCategory}
+                title="Delete Category"
+                message={`"${categoryDeleteModalState.skill?.skill_name}" is the only skill in this category. Deleting it will remove the category. Do you want to proceed?`}
+                confirmText="Delete Skill & Category"
+                cancelText="Cancel"
+            />
         </div>
     );
 }

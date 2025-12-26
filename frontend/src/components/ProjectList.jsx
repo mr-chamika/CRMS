@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
+import ConfirmationModal from './ConfirmationModal';
 import api from '../utils/api';
 
 function ProjectList() {
@@ -19,6 +20,7 @@ function ProjectList() {
     const [showModal, setShowModal] = useState(false);
     const [viewing, setViewing] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
+    const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, project: null });
     const [filters, setFilters] = useState({
         search: '',
         status: ''
@@ -233,14 +235,19 @@ function ProjectList() {
         setShowModal(true);
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this project?')) return;
+    const handleDelete = (project) => {
+        setDeleteModalState({ isOpen: true, project: project });
+    };
 
-        try {
-            await api.delete(`/projects/${id}`);
-            fetchProjects();
-        } catch (error) {
-            console.error('Error deleting project:', error);
+    const confirmDelete = async () => {
+        if (deleteModalState.project) {
+            try {
+                await api.delete(`/projects/${deleteModalState.project.id}`);
+                fetchProjects();
+                setDeleteModalState({ isOpen: false, project: null });
+            } catch (error) {
+                console.error('Error deleting project:', error);
+            }
         }
     };
 
@@ -395,7 +402,7 @@ function ProjectList() {
                                             Edit
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(project.id)}
+                                            onClick={() => handleDelete(project)}
                                             className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-200"
                                         >
                                             Delete
@@ -705,6 +712,19 @@ function ProjectList() {
                     </div>
                 )}
             </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={deleteModalState.isOpen}
+                onClose={() => {
+                    setDeleteModalState({ isOpen: false, project: null });
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Project"
+                message={`Are you sure you want to delete "${deleteModalState.project?.name}"? This action cannot be undone.`}
+                confirmText="Delete Project"
+                cancelText="Cancel"
+            />
         </div>
     );
 }

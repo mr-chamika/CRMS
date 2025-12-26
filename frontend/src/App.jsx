@@ -9,6 +9,7 @@ import EmployeeDashboard from './components/EmployeeDashboard';
 import Auth from './components/Auth';
 import Modal from './components/Modal';
 import SkillsManagement from './components/SkillsManagement';
+import ConfirmationModal from './components/ConfirmationModal';
 
 function App() {
     const [activeTab, setActiveTab] = useState('personnel');
@@ -127,33 +128,15 @@ function App() {
             </main>
 
             {/* Logout Confirmation Modal */}
-            <Modal
+            <ConfirmationModal
                 isOpen={showLogoutModal}
                 onClose={() => setShowLogoutModal(false)}
+                onConfirm={confirmLogout}
                 title="Confirm Logout"
-            >
-                <div className="text-center">
-                    <div className="mb-6">
-                        <div className="text-6xl mb-4">🚪</div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">Are you sure you want to logout?</h3>
-                        <p className="text-gray-600">You will be redirected to the login page.</p>
-                    </div>
-                    <div className="flex gap-3 justify-center">
-                        <button
-                            onClick={confirmLogout}
-                            className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
-                        >
-                            Logout
-                        </button>
-                        <button
-                            onClick={() => setShowLogoutModal(false)}
-                            className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+                message="Are you sure you want to logout? You will be redirected to the login page."
+                confirmText="Logout"
+                cancelText="Cancel"
+            />
         </div>
     );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
+import ConfirmationModal from './ConfirmationModal';
 import api from '../utils/api';
 
 function PersonnelList() {
@@ -19,6 +20,7 @@ function PersonnelList() {
     const [showModal, setShowModal] = useState(false);
     const [viewing, setViewing] = useState(null);
     const [showViewModal, setShowViewModal] = useState(false);
+    const [deleteModalState, setDeleteModalState] = useState({ isOpen: false, personnel: null });
     const [filters, setFilters] = useState({
         search: '',
         experience_level: '',
@@ -171,16 +173,19 @@ function PersonnelList() {
         setShowModal(true);
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = (person) => {
+        setDeleteModalState({ isOpen: true, personnel: person });
+    };
 
-
-        if (!window.confirm('Are you sure you want to delete this personnel?')) return;
-
-        try {
-            await api.delete(`/personnel/${id}`);
-            fetchPersonnel();
-        } catch (error) {
-            console.error('Error deleting personnel:', error);
+    const confirmDelete = async () => {
+        if (deleteModalState.personnel) {
+            try {
+                await api.delete(`/personnel/${deleteModalState.personnel.id}`);
+                fetchPersonnel();
+                setDeleteModalState({ isOpen: false, personnel: null });
+            } catch (error) {
+                console.error('Error deleting personnel:', error);
+            }
         }
     };
 
@@ -379,7 +384,7 @@ function PersonnelList() {
                                         <button onClick={() => handleEdit(person)} className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg text-sm mr-2 transition-colors duration-200">
                                             Edit
                                         </button>
-                                        <button onClick={() => handleDelete(person.id)} className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-200">
+                                        <button onClick={() => handleDelete(person)} className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-200">
                                             Delete
                                         </button>
                                     </td>
@@ -686,6 +691,19 @@ function PersonnelList() {
                     </div>
                 )}
             </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={deleteModalState.isOpen}
+                onClose={() => {
+                    setDeleteModalState({ isOpen: false, personnel: null });
+                }}
+                onConfirm={confirmDelete}
+                title="Delete Personnel"
+                message={`Are you sure you want to delete "${deleteModalState.personnel?.name}"? This action cannot be undone.`}
+                confirmText="Delete Personnel"
+                cancelText="Cancel"
+            />
         </div>
     );
 }

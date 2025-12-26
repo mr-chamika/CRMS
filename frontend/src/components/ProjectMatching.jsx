@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ConfirmationModal from './ConfirmationModal';
 import api from '../utils/api';
 
 function ProjectMatching() {
@@ -8,6 +9,8 @@ function ProjectMatching() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [assigning, setAssigning] = useState(null);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [assignData, setAssignData] = useState(null);
     const [filters, setFilters] = useState({
         name: '',
         role: '',
@@ -85,8 +88,8 @@ function ProjectMatching() {
         const actionText = isAssigned ? 'release' : 'assign';
 
         const confirmMessage = `Are you sure you want to ${actionText} ${personnelName} ${isAssigned ? 'from' : 'to'} this project?`;
-        const confirmAssign = window.confirm(confirmMessage);
-        if (!confirmAssign) return;
+        setAssignData({ personnelId, personnelName, isAssigned, actionText, confirmMessage });
+        setShowAssignModal(true);
 
         setAssigning(personnelId);
 
@@ -109,6 +112,35 @@ function ProjectMatching() {
             alert(`Failed to ${actionText} personnel. Please try again.`);
         } finally {
             setAssigning(null);
+        }
+    };
+
+    const confirmAssign = async () => {
+        if (!assignData) return;
+
+        const { personnelId, personnelName, isAssigned, actionText } = assignData;
+        setAssigning(personnelId);
+        setShowAssignModal(false);
+
+        try {
+            const response = await api.post(`/projects/${selectedProject}/assign/${personnelId}`, {
+                capacity_percentage: 100 // Default to 100% capacity
+            });
+
+            if (response.ok) {
+                const actionPast = isAssigned ? 'released' : 'assigned';
+                alert(`${personnelName} has been ${actionPast} ${isAssigned ? 'from' : 'to'} the project successfully!`);
+                // Refresh the matching data to show updated status
+                await handleMatch();
+            } else {
+                const errorData = await response.json();
+                alert(`Failed to ${actionText} personnel: ${errorData.error || 'Unknown error'}`);
+            }
+        } catch (error) {
+            setError('Network error occurred');
+        } finally {
+            setAssigning(null);
+            setAssignData(null);
         }
     };
 
@@ -448,6 +480,20 @@ function ProjectMatching() {
                     </div>
                 )}
             </div>
+
+            {/* Assignment Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={showAssignModal}
+                onClose={() => {
+                    setShowAssignModal(false);
+                    setAssignData(null);
+                }}
+                onConfirm={confirmAssign}
+                title={`${assignData?.actionText?.charAt(0).toUpperCase() + assignData?.actionText?.slice(1)} Personnel`}
+                message={assignData?.confirmMessage}
+                confirmText={`${assignData?.actionText?.charAt(0).toUpperCase() + assignData?.actionText?.slice(1)}`}
+                cancelText="Cancel"
+            />
         </div>
     );
 }
