@@ -7,11 +7,13 @@ import ProjectList from './components/ProjectList';
 import ProjectMatching from './components/ProjectMatching';
 import EmployeeDashboard from './components/EmployeeDashboard';
 import Auth from './components/Auth';
+import Modal from './components/Modal';
 
 function App() {
     const [activeTab, setActiveTab] = useState('personnel');
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     useEffect(() => {
         // Check if user is already logged in
@@ -30,9 +32,14 @@ function App() {
     };
 
     const handleLogout = () => {
+        setShowLogoutModal(true);
+    };
+
+    const confirmLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
+        setShowLogoutModal(false);
     };
 
     if (loading) {
@@ -109,6 +116,35 @@ function App() {
                     <EmployeeDashboard user={user} />
                 )}
             </main>
+
+            {/* Logout Confirmation Modal */}
+            <Modal
+                isOpen={showLogoutModal}
+                onClose={() => setShowLogoutModal(false)}
+                title="Confirm Logout"
+            >
+                <div className="text-center">
+                    <div className="mb-6">
+                        <div className="text-6xl mb-4">🚪</div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-2">Are you sure you want to logout?</h3>
+                        <p className="text-gray-600">You will be redirected to the login page.</p>
+                    </div>
+                    <div className="flex gap-3 justify-center">
+                        <button
+                            onClick={confirmLogout}
+                            className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                        >
+                            Logout
+                        </button>
+                        <button
+                            onClick={() => setShowLogoutModal(false)}
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
