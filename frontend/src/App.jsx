@@ -8,6 +8,7 @@ import ProjectMatching from './components/ProjectMatching';
 import EmployeeDashboard from './components/EmployeeDashboard';
 import Auth from './components/Auth';
 import Modal from './components/Modal';
+import SkillsManagement from './components/SkillsManagement';
 
 function App() {
     const [activeTab, setActiveTab] = useState('personnel');
@@ -102,6 +103,13 @@ function App() {
                         >
                             Project Matching
                         </button>
+                        <button
+                            className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'skills' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
+                                }`}
+                            onClick={() => setActiveTab('skills')}
+                        >
+                            Skills Management
+                        </button>
                     </nav>
                 )}
             </header>
@@ -111,6 +119,7 @@ function App() {
                         {activeTab === 'personnel' && <PersonnelList />}
                         {activeTab === 'projects' && <ProjectList />}
                         {activeTab === 'matching' && <ProjectMatching />}
+                        {activeTab === 'skills' && <SkillsManagement />}
                     </>
                 ) : (
                     <EmployeeDashboard user={user} />
