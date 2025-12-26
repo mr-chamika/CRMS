@@ -26,7 +26,7 @@ The Consultancy Resource & Skill Management System (CRMS) is a full-stack web ap
 
 ## 4. Core Features (Required)
 
-### Manager
+### Manager (Current Design Assumes a Single Manager Account)
 
 #### 4.1 Personnel Management
 - Create new personnel  
@@ -73,9 +73,10 @@ The Consultancy Resource & Skill Management System (CRMS) is a full-stack web ap
   - Passwords are hashed using bcrypt  
 
 - **Authentication (Login):**  
+  -Note: Manager credentials must be added manually in the database for testing purposes(ex:API Testing Screenshots => Testing 1).
   - Manager login using email and password  
   - **Email verification is not implemented**, as the system is designed for **internal organizational use**  
-  - Email verification and OTP-based authentication can be added as a future enhancement  
+  - Email verification and OTP based authentication can be added as a future enhancement  
 
 ### Employee (Optional / Future)
 - View own profile  

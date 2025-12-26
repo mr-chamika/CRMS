@@ -95,7 +95,7 @@ function ProjectMatching() {
     const confirmAssign = async () => {
         if (!assignData) return;
 
-        const { personnelId, personnelName, isAssigned, actionText } = assignData;
+        const { personnelId, actionText } = assignData;
         setAssigning(personnelId);
         setShowAssignModal(false);
 
@@ -105,13 +105,10 @@ function ProjectMatching() {
             });
 
             if (response.ok) {
-                const actionPast = isAssigned ? 'released' : 'assigned';
-                //alert(`${personnelName} has been ${actionPast} ${isAssigned ? 'from' : 'to'} the project successfully!`);
-                // Refresh the matching data to show updated status
                 await handleMatch();
             } else {
                 const errorData = await response.json();
-                //alert(`Failed to ${actionText} personnel: ${errorData.error || 'Unknown error'}`);
+                alert(`Failed to ${actionText} personnel: ${errorData.error || 'Unknown error'}`);
             }
         } catch (error) {
             setError('Network error occurred');

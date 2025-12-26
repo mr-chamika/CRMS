@@ -384,7 +384,7 @@ function PersonnelList({ user }) {
                                         <button onClick={() => handleEdit(person)} className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg text-sm mr-2 transition-colors duration-200">
                                             Edit
                                         </button>
-                                        {person && person.role_title != "manager" && <button onClick={() => handleDelete(person)} className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-200">
+                                        {person && person.role_title !== "manager" && <button onClick={() => handleDelete(person)} className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-200">
                                             Delete
                                         </button>}
                                     </td>
@@ -461,7 +461,7 @@ function PersonnelList({ user }) {
                                         disabled={editing && person && person.role_title === "manager"}
                                         className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 disabled:bg-gray-100 disabled:cursor-not-allowed"
                                     >
-                                        <option value="">{person && person.role_title == "manager" ? "Manager" : "Select a role"}</option>
+                                        <option value="">{person && person.role_title === "manager" ? "Manager" : "Select a role"}</option>
                                         <option value="Software Engineer">Software Engineer</option>
                                         <option value="Project Manager">Project Manager</option>
                                         <option value="UI/UX Designer">UI/UX Designer</option>
