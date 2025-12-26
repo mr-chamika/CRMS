@@ -50,6 +50,44 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get('/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const db = await getDB();
+
+        // Get project details
+        const [projectRows] = await db.execute('SELECT * FROM projects WHERE id = ?', [id]);
+        if (projectRows.length === 0) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+        const project = projectRows[0];
+
+        // Get project requirements
+        const [requirements] = await db.execute(`
+            SELECT pr.skill_id, pr.min_proficiency_level, s.skill_name
+            FROM project_requirements pr
+            JOIN skills s ON pr.skill_id = s.id
+            WHERE pr.project_id = ?
+        `, [id]);
+
+        // Get assigned personnel
+        const [assignments] = await db.execute(`
+            SELECT pa.personnel_id, p.name, p.role_title, pa.assigned_start_date, pa.assigned_end_date, pa.capacity_percentage
+            FROM project_assignments pa
+            JOIN personnel p ON pa.personnel_id = p.id
+            WHERE pa.project_id = ?
+        `, [id]);
+
+        res.json({
+            ...project,
+            requirements,
+            assigned_personnel: assignments
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post('/', async (req, res) => {
     const { name, description, start_date, end_date, status } = req.body;
     try {
