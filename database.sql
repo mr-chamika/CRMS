@@ -54,11 +54,15 @@ CREATE TABLE project_requirements (
 
 -- Table: project_assignments
 CREATE TABLE project_assignments (
+    id INT PRIMARY KEY AUTO_INCREMENT,
     project_id INT,
     personnel_id INT,
-    capacity_percentage DECIMAL(5,2) CHECK (capacity_percentage BETWEEN 0 AND 100),
-    PRIMARY KEY (project_id, personnel_id),
+    capacity_percentage DECIMAL(5,2) DEFAULT 100 CHECK (capacity_percentage BETWEEN 0 AND 100),
+    assigned_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    assigned_start_date DATE,
+    assigned_end_date DATE,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE CASCADE
+    FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_personnel_project (project_id, personnel_id)
 );
 

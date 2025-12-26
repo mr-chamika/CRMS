@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
+// eslint-disable-next-line no-unused-vars
 import PersonnelList from './components/PersonnelList';
+// eslint-disable-next-line no-unused-vars
 import ProjectList from './components/ProjectList';
+// eslint-disable-next-line no-unused-vars
 import ProjectMatching from './components/ProjectMatching';
+import EmployeeDashboard from './components/EmployeeDashboard';
 import Auth from './components/Auth';
 
 function App() {
@@ -47,6 +51,9 @@ function App() {
         );
     }
 
+    const isManager = user.role_title && (user.role_title == 'manager');
+    console.log(user)
+    console.log(isManager)
     return (
         <div className="flex flex-col min-h-screen bg-gray-100">
             <header className="bg-gradient-to-br from-blue-500 to-purple-600 py-5 text-white shadow-lg">
@@ -56,40 +63,51 @@ function App() {
                         <span className="text-sm">Welcome, {user.name}</span>
                         <button
                             onClick={handleLogout}
-                            className="py-2 px-4 bg-white bg-opacity-20 border border-white border-opacity-30 text-white text-sm font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50"
+                            className="flex items-center gap-2 py-2 px-4 bg-black bg-opacity-80 border border-gray-600 border-opacity-50 text-white text-sm font-semibold rounded-lg cursor-pointer transition-all duration-300 hover:bg-gray-900 hover:border-gray-500 hover:shadow-lg hover:-translate-y-0.5"
                         >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
                             Logout
                         </button>
                     </div>
                 </div>
-                <nav className="flex justify-center gap-5 mt-5">
-                    <button
-                        className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'personnel' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
-                            }`}
-                        onClick={() => setActiveTab('personnel')}
-                    >
-                        Personnel Dashboard
-                    </button>
-                    <button
-                        className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'projects' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
-                            }`}
-                        onClick={() => setActiveTab('projects')}
-                    >
-                        Project Dashboard
-                    </button>
-                    <button
-                        className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'matching' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
-                            }`}
-                        onClick={() => setActiveTab('matching')}
-                    >
-                        Project Matching
-                    </button>
-                </nav>
+                {isManager && (
+                    <nav className="flex justify-center gap-5 mt-5">
+                        <button
+                            className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'personnel' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
+                                }`}
+                            onClick={() => setActiveTab('personnel')}
+                        >
+                            Personnel Dashboard
+                        </button>
+                        <button
+                            className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'projects' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
+                                }`}
+                            onClick={() => setActiveTab('projects')}
+                        >
+                            Project Dashboard
+                        </button>
+                        <button
+                            className={`py-3 px-8 bg-white bg-opacity-20 border-2 border-white border-opacity-30 text-white text-base font-semibold rounded-full cursor-pointer transition-all duration-300 backdrop-blur-sm hover:bg-opacity-30 hover:border-opacity-50 hover:-translate-y-1 hover:shadow-xl ${activeTab === 'matching' ? 'bg-white text-blue-500 border-white -translate-y-1' : ''
+                                }`}
+                            onClick={() => setActiveTab('matching')}
+                        >
+                            Project Matching
+                        </button>
+                    </nav>
+                )}
             </header>
             <main className="flex-1 p-0 overflow-hidden">
-                {activeTab === 'personnel' && <PersonnelList />}
-                {activeTab === 'projects' && <ProjectList />}
-                {activeTab === 'matching' && <ProjectMatching />}
+                {isManager ? (
+                    <>
+                        {activeTab === 'personnel' && <PersonnelList />}
+                        {activeTab === 'projects' && <ProjectList />}
+                        {activeTab === 'matching' && <ProjectMatching />}
+                    </>
+                ) : (
+                    <EmployeeDashboard user={user} />
+                )}
             </main>
         </div>
     );

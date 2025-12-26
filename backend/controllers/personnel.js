@@ -12,6 +12,32 @@ router.get('/', async (req, res) => {
     }
 });
 
+// Get unique roles
+router.get('/roles', async (req, res) => {
+    try {
+        const db = await getDB();
+        const [rows] = await db.execute('SELECT DISTINCT role_title FROM personnel WHERE role_title IS NOT NULL AND role_title != "" ORDER BY role_title');
+        res.json(rows.map(row => row.role_title));
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get single personnel by ID
+router.get('/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const db = await getDB();
+        const [rows] = await db.execute('SELECT id, name, email, role_title, experience_level, status, created_at FROM personnel WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Personnel not found' });
+        }
+        res.json(rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.post('/', async (req, res) => {
     const { name, email, role_title, experience_level, status } = req.body;
     try {
@@ -62,7 +88,7 @@ router.get('/:id/skills', async (req, res) => {
             FROM personnel_skills ps
             JOIN skills s ON ps.skill_id = s.id
             WHERE ps.personnel_id = ?
-        `, [id]);
+            `, [id]);
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -90,6 +116,30 @@ router.put('/:id/skills', async (req, res) => {
         }
 
         res.json({ message: 'Skills updated' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get assigned projects for a personnel
+router.get('/:id/projects', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const db = await getDB();
+        const [rows] = await db.execute(`
+            SELECT pa.id, pa.project_id, pa.assigned_start_date as start_date, pa.assigned_end_date as end_date, 
+                   pa.capacity_percentage, pa.assigned_date, p.name as project_name, p.status, p.description,
+                   CASE 
+                       WHEN pa.assigned_end_date IS NULL THEN 'Active'
+                       WHEN pa.assigned_end_date < CURDATE() THEN 'Completed'
+                       ELSE 'Active'
+                   END as assignment_status
+            FROM project_assignments pa
+            JOIN projects p ON pa.project_id = p.id
+            WHERE pa.personnel_id = ?
+            ORDER BY pa.assigned_date DESC
+        `, [id]);
+        res.json(rows);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

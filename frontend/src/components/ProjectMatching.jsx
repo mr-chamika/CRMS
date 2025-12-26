@@ -7,9 +7,34 @@ function ProjectMatching() {
     const [matching, setMatching] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [assigning, setAssigning] = useState(null);
+    const [filters, setFilters] = useState({
+        name: '',
+        role: '',
+        status: '',
+        minMatchScore: '',
+        maxUtilization: '',
+        skillFilter: ''
+    });
+    const [showFilters, setShowFilters] = useState(false);
+    const [skills, setSkills] = useState([]);
+
+    const roles = [
+        'Software Engineer',
+        'Project Manager',
+        'UI/UX Designer',
+        'Data Analyst',
+        'DevOps Engineer',
+        'QA Engineer',
+        'Business Analyst',
+        'Product Manager',
+        'System Administrator',
+        'Database Administrator'
+    ];
 
     useEffect(() => {
         fetchProjects();
+        fetchSkills();
     }, []);
 
     const fetchProjects = async () => {
@@ -20,6 +45,17 @@ function ProjectMatching() {
         } catch (error) {
             console.error('Error fetching projects:', error);
             setProjects([]);
+        }
+    };
+
+    const fetchSkills = async () => {
+        try {
+            const response = await api.get('/skills');
+            const data = await response.json();
+            setSkills(data || []);
+        } catch (error) {
+            console.error('Error fetching skills:', error);
+            setSkills([]);
         }
     };
 
@@ -42,10 +78,105 @@ function ProjectMatching() {
         }
     };
 
+    const handleAssign = async (personnelId, personnelName) => {
+        if (!selectedProject) return;
+
+        const isAssigned = matching?.personnel?.find(p => p.id === personnelId)?.is_assigned_to_project;
+        const actionText = isAssigned ? 'release' : 'assign';
+
+        const confirmMessage = `Are you sure you want to ${actionText} ${personnelName} ${isAssigned ? 'from' : 'to'} this project?`;
+        const confirmAssign = window.confirm(confirmMessage);
+        if (!confirmAssign) return;
+
+        setAssigning(personnelId);
+
+        try {
+            const response = await api.post(`/projects/${selectedProject}/assign/${personnelId}`, {
+                capacity_percentage: 100 // Default to 100% capacity
+            });
+
+            if (response.ok) {
+                const actionPast = isAssigned ? 'released' : 'assigned';
+                alert(`${personnelName} has been ${actionPast} ${isAssigned ? 'from' : 'to'} the project successfully!`);
+                // Refresh the matching data to show updated status
+                await handleMatch();
+            } else {
+                const errorData = await response.json();
+                alert(`Failed to ${actionText} personnel: ${errorData.error || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Error assigning personnel:', error);
+            alert(`Failed to ${actionText} personnel. Please try again.`);
+        } finally {
+            setAssigning(null);
+        }
+    };
+
     const getProficiencyLabel = (level) => {
         const labels = { 1: 'Beginner', 2: 'Intermediate', 3: 'Advanced', 4: 'Expert' };
         return labels[level] || level;
     };
+
+    const filteredPersonnel = React.useMemo(() => {
+        if (!matching?.personnel) return [];
+
+        const filtered = matching.personnel.filter(person => {
+            // Name filter
+            if (filters.name && !person.name.toLowerCase().includes(filters.name.toLowerCase())) {
+                return false;
+            }
+
+            // Role filter
+            if (filters.role && !person.role_title?.toLowerCase().includes(filters.role.toLowerCase())) {
+                return false;
+            }
+
+            // Status filter
+            if (filters.status && person.status !== filters.status) {
+                return false;
+            }
+
+            // Minimum match score filter
+            if (filters.minMatchScore && (person.match_score || 0) < parseInt(filters.minMatchScore)) {
+                return false;
+            }
+
+            // Maximum utilization filter
+            if (filters.maxUtilization && (person.currentUtilization || 0) > parseInt(filters.maxUtilization)) {
+                return false;
+            }
+
+            // Skill filter
+            if (filters.skillFilter) {
+                const personSkills = person.skills ? person.skills.split(',').map(skill => skill.split(':')[0].trim()) : [];
+                if (!personSkills.some(skill => skill === filters.skillFilter)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        // Sort to put assigned employees first
+        return filtered.sort((a, b) => {
+            const aAssigned = a.is_assigned_to_project ? 1 : 0;
+            const bAssigned = b.is_assigned_to_project ? 1 : 0;
+            return bAssigned - aAssigned; // Assigned employees (1) come before unassigned (0)
+        });
+    }, [matching?.personnel, filters]);
+
+    const clearFilters = () => {
+        setFilters({
+            name: '',
+            role: '',
+            status: '',
+            minMatchScore: '',
+            maxUtilization: '',
+            skillFilter: ''
+        });
+    };
+
+    const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
     return (
         <div className="flex flex-col h-full max-w-6xl mx-auto p-5">
@@ -103,10 +234,116 @@ function ProjectMatching() {
                         </div>
 
                         <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-200 flex flex-col">
-                            <h3 className="text-xl font-bold text-gray-800 mb-5">Matching Results</h3>
-                            <div className="mb-5 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
-                                <p className="m-0">Found <strong>{matching.personnel ? matching.personnel.length : 0}</strong> personnel evaluated for this project.</p>
+                            <div className="flex justify-between items-center mb-5">
+                                <h3 className="text-xl font-bold text-gray-800 m-0">Matching Results</h3>
+                                <button
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 hover:shadow-lg text-sm"
+                                >
+                                    {showFilters ? 'Hide Filters' : 'Show Filters'}
+                                </button>
                             </div>
+
+                            {showFilters && (
+                                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                            <input
+                                                type="text"
+                                                value={filters.name}
+                                                onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+                                                placeholder="Filter by name..."
+                                                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                            <select
+                                                value={filters.role}
+                                                onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+                                                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">All Roles</option>
+                                                {roles.map((role, index) => (
+                                                    <option key={index} value={role}>
+                                                        {role}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                            <select
+                                                value={filters.status}
+                                                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                                                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">All Statuses</option>
+                                                <option value="Available">Available</option>
+                                                <option value="Busy">Busy</option>
+                                                <option value="On Leave">On Leave</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Min Match Score (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={filters.minMatchScore}
+                                                onChange={(e) => setFilters({ ...filters, minMatchScore: e.target.value })}
+                                                placeholder="e.g., 70"
+                                                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Max Utilization (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                value={filters.maxUtilization}
+                                                onChange={(e) => setFilters({ ...filters, maxUtilization: e.target.value })}
+                                                placeholder="e.g., 80"
+                                                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Skill</label>
+                                            <select
+                                                value={filters.skillFilter}
+                                                onChange={(e) => setFilters({ ...filters, skillFilter: e.target.value })}
+                                                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            >
+                                                <option value="">All Skills</option>
+                                                {skills.map((skill) => (
+                                                    <option key={skill.id} value={skill.skill_name}>
+                                                        {skill.skill_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <button
+                                            onClick={clearFilters}
+                                            className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 hover:shadow-lg text-sm"
+                                            disabled={!hasActiveFilters}
+                                        >
+                                            Clear Filters
+                                        </button>
+                                        <div className="text-sm text-gray-600">
+                                            {hasActiveFilters && `${filteredPersonnel.length} of ${matching?.personnel?.length || 0} results shown`}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mb-5 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+                                <p className="m-0">Found <strong>{filteredPersonnel.length}</strong> personnel evaluated for this project.</p>
+                            </div>
+
                             <div className="overflow-auto max-h-96">
                                 <table className="w-full border-collapse text-sm">
                                     <thead>
@@ -118,11 +355,12 @@ function ProjectMatching() {
                                             <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Match Score</th>
                                             <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Status</th>
                                             <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Utilization</th>
+                                            <th className="bg-gray-50 text-gray-700 font-semibold py-4 px-3 text-left border-b-2 border-gray-200 sticky top-0">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {matching.personnel && matching.personnel.map((person) => (
-                                            <tr key={person.id} className="hover:bg-gray-50">
+                                        {filteredPersonnel.map((person) => (
+                                            <tr key={person.id} className={`hover:bg-gray-50 ${person.is_assigned_to_project ? 'bg-green-50' : ''}`}>
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">{person.name}</td>
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">{person.email}</td>
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">{person.role_title || '-'}</td>
@@ -142,11 +380,11 @@ function ProjectMatching() {
                                                     </div>
                                                 </td>
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">
-                                                    <span className={`font-bold py-1 px-3 rounded text-sm ${person.match_score >= 80 ? 'bg-green-100 text-green-800' :
-                                                        person.match_score >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                                                    <span className={`font-bold py-1 px-3 rounded text-sm ${(person.match_score || 0) >= 80 ? 'bg-green-100 text-green-800' :
+                                                        (person.match_score || 0) >= 60 ? 'bg-yellow-100 text-yellow-800' :
                                                             'bg-red-100 text-red-800'
                                                         }`}>
-                                                        {person.match_score}%
+                                                        {person.match_score || 0}%
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">
@@ -159,26 +397,50 @@ function ProjectMatching() {
                                                 </td>
                                                 <td className="py-4 px-3 border-b border-gray-200 align-middle">
                                                     <div className="flex flex-col items-center gap-1">
-                                                        <span className={`font-bold py-1 px-3 rounded text-sm ${person.utilization_level === 'critical' ? 'bg-red-100 text-red-800 border border-red-300' :
-                                                            person.utilization_level === 'high' ? 'bg-orange-100 text-orange-800 border border-orange-300' :
-                                                                person.utilization_level === 'medium' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
+                                                        <span className={`font-bold py-1 px-3 rounded text-sm ${(person.utilization_level || 'low') === 'critical' ? 'bg-red-100 text-red-800 border border-red-300' :
+                                                            (person.utilization_level || 'low') === 'high' ? 'bg-orange-100 text-orange-800 border border-orange-300' :
+                                                                (person.utilization_level || 'low') === 'medium' ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' :
                                                                     'bg-green-100 text-green-800 border border-green-300'
                                                             }`}>
-                                                            {person.current_utilization}%
+                                                            {person.currentUtilization || 0}%
                                                         </span>
                                                         {person.utilization_warning && (
                                                             <span className="text-xs text-red-600 font-medium">⚠️ Overloaded</span>
                                                         )}
+
                                                     </div>
+                                                </td>
+                                                <td className="py-4 px-3 border-b border-gray-200 align-middle">
+                                                    <button
+                                                        onClick={() => handleAssign(person.id, person.name)}
+                                                        disabled={assigning === person.id || (!person.is_assigned_to_project && ((person.currentUtilization || 0) >= 80 || person.has_date_overlap))}
+                                                        className={`py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 ${person.is_assigned_to_project
+                                                            ? 'bg-red-500 hover:bg-red-600 text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
+                                                            : ((person.currentUtilization || 0) < 80 && !person.has_date_overlap)
+                                                                ? 'bg-blue-500 hover:bg-blue-600 text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
+                                                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                                            }`}
+                                                    >
+                                                        {assigning === person.id
+                                                            ? 'Processing...'
+                                                            : person.is_assigned_to_project
+                                                                ? 'Release'
+                                                                : person.has_date_overlap
+                                                                    ? 'Date Conflict'
+                                                                    : (person.currentUtilization || 0) >= 80
+                                                                        ? 'Overloaded'
+                                                                        : 'Assign'
+                                                        }
+                                                    </button>
                                                 </td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                                {(!matching.personnel || matching.personnel.length === 0) && (
+                                {filteredPersonnel.length === 0 && (
                                     <div className="text-center py-16 text-gray-500">
-                                        <p className="text-lg mb-2">No personnel found in the system.</p>
-                                        <p className="text-sm">Add personnel to see matching results.</p>
+                                        <p className="text-lg mb-2">No personnel match the current filters.</p>
+                                        <p className="text-sm">Try adjusting your filter criteria or clear filters to see all results.</p>
                                     </div>
                                 )}
                             </div>

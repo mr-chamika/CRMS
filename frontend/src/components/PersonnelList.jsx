@@ -43,7 +43,9 @@ function PersonnelList() {
     const fetchSkills = async () => {
         try {
             const response = await api.get('/skills');
-            setSkills(response.data);
+            const data = await response.json();
+
+            setSkills(data);
         } catch (error) {
             console.error('Error fetching skills:', error);
         }
@@ -53,6 +55,7 @@ function PersonnelList() {
         try {
             const response = await api.get(`/personnel/${personnelId}/skills`);
             const data = await response.json();
+
             return data;
         } catch (error) {
             console.error('Error fetching personnel skills:', error);
@@ -443,14 +446,24 @@ function PersonnelList() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
                         <div className="flex flex-col">
                             <label htmlFor="role" className="font-semibold mb-2 text-gray-700 text-sm">Role Title</label>
-                            <input
+                            <select
                                 id="role"
-                                type="text"
                                 value={form.role_title}
                                 onChange={(e) => setForm({ ...form, role_title: e.target.value })}
                                 className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
-                                placeholder="e.g., Software Engineer"
-                            />
+                            >
+                                <option value="">Select a role</option>
+                                <option value="Software Engineer">Software Engineer</option>
+                                <option value="Project Manager">Project Manager</option>
+                                <option value="UI/UX Designer">UI/UX Designer</option>
+                                <option value="Data Analyst">Data Analyst</option>
+                                <option value="DevOps Engineer">DevOps Engineer</option>
+                                <option value="QA Engineer">QA Engineer</option>
+                                <option value="Business Analyst">Business Analyst</option>
+                                <option value="Product Manager">Product Manager</option>
+                                <option value="System Administrator">System Administrator</option>
+                                <option value="Database Administrator">Database Administrator</option>
+                            </select>
                         </div>
                         <div className="flex flex-col">
                             <label htmlFor="experience" className="font-semibold mb-2 text-gray-700 text-sm">Experience Level</label>
@@ -618,7 +631,7 @@ function PersonnelList() {
                         </div>
 
                         {/* Skills Section */}
-                        <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-6 rounded-xl border border-gray-200">
+                        <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-6 rounded-xl border border-gray-200 max-h-80">
                             <div className="flex items-center mb-4">
                                 <svg className="w-6 h-6 text-gray-700 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -630,7 +643,7 @@ function PersonnelList() {
                             </div>
 
                             {viewing.skills && viewing.skills.length > 0 ? (
-                                <div className="border border-gray-200 rounded-lg bg-white">
+                                <div className="border border-gray-200 rounded-lg bg-white max-h-32 overflow-y-auto">
                                     <div className="divide-y divide-gray-100">
                                         {viewing.skills && viewing.skills.length > 0 && viewing.skills.map((skill, index) => (
                                             <div key={index} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors duration-150">

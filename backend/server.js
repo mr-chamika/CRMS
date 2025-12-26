@@ -87,12 +87,27 @@ async function initializeDatabase() {
                 id INT PRIMARY KEY AUTO_INCREMENT,
                 project_id INT,
                 personnel_id INT,
-                capacity_percentage INT DEFAULT 100 CHECK (capacity_percentage BETWEEN 0 AND 100),
-                assigned_date DATE DEFAULT CURRENT_TIMESTAMP,
+                capacity_percentage DECIMAL(5,2) DEFAULT 100 CHECK (capacity_percentage BETWEEN 0 AND 100),
+                assigned_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                assigned_start_date DATE,
+                assigned_end_date DATE,
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-                FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE CASCADE
+                FOREIGN KEY (personnel_id) REFERENCES personnel(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_personnel_project (project_id, personnel_id)
             )
         `);
+
+        // Add date columns if they don't exist (for existing databases)
+        try {
+            await db.execute(`
+                ALTER TABLE project_assignments
+                ADD COLUMN IF NOT EXISTS assigned_start_date DATE,
+                ADD COLUMN IF NOT EXISTS assigned_end_date DATE
+            `);
+        } catch (error) {
+            // Columns might already exist, ignore error
+            console.log('Date columns check completed');
+        }
 
         // Insert default skills if not exists
         await db.execute(`
@@ -124,8 +139,44 @@ async function initializeDatabase() {
         `);
 
         console.log('Database tables initialized');
+
+        // Clean up duplicate assignments (keep only one assignment per personnel)
+        await cleanupDuplicateAssignments();
     } catch (error) {
         console.error('Error initializing database:', error);
+    }
+}
+
+async function cleanupDuplicateAssignments() {
+    try {
+        // For each personnel with multiple assignments, keep only the most recent one
+        const [duplicates] = await db.execute(`
+            SELECT personnel_id, COUNT(*) as count
+            FROM project_assignments 
+            GROUP BY personnel_id 
+            HAVING count > 1
+        `);
+
+        if (duplicates.length > 0) {
+            console.log(`Found ${duplicates.length} personnel with multiple assignments. Cleaning up...`);
+
+            for (const dup of duplicates) {
+                // Keep the most recent assignment, delete others
+                await db.execute(`
+                    DELETE pa FROM project_assignments pa
+                    INNER JOIN (
+                        SELECT personnel_id, MAX(assigned_date) as max_date
+                        FROM project_assignments 
+                        WHERE personnel_id = ?
+                    ) keep ON pa.personnel_id = keep.personnel_id AND pa.assigned_date < keep.max_date
+                    WHERE pa.personnel_id = ?
+                `, [dup.personnel_id, dup.personnel_id]);
+            }
+
+            console.log('Duplicate assignments cleaned up');
+        }
+    } catch (error) {
+        console.error('Error cleaning up duplicate assignments:', error);
     }
 }
 
