@@ -3,7 +3,7 @@ import Modal from './Modal';
 import ConfirmationModal from './ConfirmationModal';
 import api from '../utils/api';
 
-function PersonnelList() {
+function PersonnelList({ user }) {
     const [personnel, setPersonnel] = useState([]);
     const [skills, setSkills] = useState([]);
     const [form, setForm] = useState({
@@ -384,9 +384,9 @@ function PersonnelList() {
                                         <button onClick={() => handleEdit(person)} className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg text-sm mr-2 transition-colors duration-200">
                                             Edit
                                         </button>
-                                        <button onClick={() => handleDelete(person)} className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-200">
+                                        {person && person.role_title != "manager" && <button onClick={() => handleDelete(person)} className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors duration-200">
                                             Delete
-                                        </button>
+                                        </button>}
                                     </td>
                                 </tr>
                             ))}
@@ -408,166 +408,173 @@ function PersonnelList() {
                 </div>
             </div>
 
-            <Modal
-                isOpen={showModal}
-                onClose={handleCloseModal}
-                title={editing ? 'Edit Personnel' : 'Add New Personnel'}
-            >
-                {errors.submit && <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-6 border border-red-200 font-medium">{errors.submit}</div>}
-                <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-                        <div className="flex flex-col">
-                            <label htmlFor="name" className="font-semibold mb-2 text-gray-700 text-sm">Full Name *</label>
-                            <input
-                                id="name"
-                                type="text"
-                                value={form.name}
-                                onChange={(e) => {
-                                    setForm({ ...form, name: e.target.value });
-                                    clearFieldError('name', e.target.value);
-                                }}
-                                className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.name ? 'border-red-500' : ''}`}
-                                placeholder="Enter full name"
-                                autoFocus
-                            />
-                            {errors.name && <span className="text-red-500 text-xs mt-1 font-medium">{errors.name}</span>}
-                        </div>
-                        <div className="flex flex-col">
-                            <label htmlFor="email" className="font-semibold mb-2 text-gray-700 text-sm">Email Address *</label>
-                            <input
-                                id="email"
-                                type="email"
-                                value={form.email}
-                                onChange={(e) => {
-                                    setForm({ ...form, email: e.target.value });
-                                    clearFieldError('email', e.target.value);
-                                }}
-                                className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.email ? 'border-red-500' : ''}`}
-                                placeholder="Enter email address"
-                            />
-                            {errors.email && <span className="text-red-500 text-xs mt-1 font-medium">{errors.email}</span>}
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
-                        <div className="flex flex-col">
-                            <label htmlFor="role" className="font-semibold mb-2 text-gray-700 text-sm">Role Title</label>
-                            <select
-                                id="role"
-                                value={form.role_title}
-                                onChange={(e) => setForm({ ...form, role_title: e.target.value })}
-                                className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
-                            >
-                                <option value="">Select a role</option>
-                                <option value="Software Engineer">Software Engineer</option>
-                                <option value="Project Manager">Project Manager</option>
-                                <option value="UI/UX Designer">UI/UX Designer</option>
-                                <option value="Data Analyst">Data Analyst</option>
-                                <option value="DevOps Engineer">DevOps Engineer</option>
-                                <option value="QA Engineer">QA Engineer</option>
-                                <option value="Business Analyst">Business Analyst</option>
-                                <option value="Product Manager">Product Manager</option>
-                                <option value="System Administrator">System Administrator</option>
-                                <option value="Database Administrator">Database Administrator</option>
-                            </select>
-                        </div>
-                        <div className="flex flex-col">
-                            <label htmlFor="experience" className="font-semibold mb-2 text-gray-700 text-sm">Experience Level</label>
-                            <select
-                                id="experience"
-                                value={form.experience_level}
-                                onChange={(e) => setForm({ ...form, experience_level: e.target.value })}
-                                className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
-                            >
-                                <option value="Junior">Junior</option>
-                                <option value="Mid-Level">Mid-Level</option>
-                                <option value="Senior">Senior</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
-                        <div className="flex flex-col">
-                            <label htmlFor="status" className="font-semibold mb-2 text-gray-700 text-sm">Availability Status</label>
-                            <select
-                                id="status"
-                                value={form.status}
-                                onChange={(e) => setForm({ ...form, status: e.target.value })}
-                                className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
-                            >
-                                <option value="Available">Available</option>
-                                <option value="Busy">Busy</option>
-                                <option value="On Leave">On Leave</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div className="mb-4">
-                        <label className="font-semibold mb-2 text-gray-700 text-sm block">Personnel Skills</label>
-                        <div className="space-y-3">
-                            {form.skills && form.skills.length > 0 && form.skills.map((skill, index) => (
-                                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <div className="flex-1">
-                                        <select
-                                            value={skill.skill_id}
-                                            onChange={(e) => updateSkill(index, 'skill_id', e.target.value)}
-                                            className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
-                                        >
-                                            <option value="">Select Skill</option>
-                                            {skills && skills.length > 0 && skills.map((s) => (
-                                                <option key={s.id} value={s.id}>
-                                                    {s.skill_name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <label className="text-sm text-gray-600">Level:</label>
-                                        <select
-                                            value={skill.proficiency_level}
-                                            onChange={(e) => updateSkill(index, 'proficiency_level', parseInt(e.target.value))}
-                                            className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
-                                        >
-                                            <option value={1}>Beginner (1)</option>
-                                            <option value={2}>Intermediate (2)</option>
-                                            <option value={3}>Advanced (3)</option>
-                                            <option value={4}>Expert (4)</option>
-                                        </select>
-                                    </div>
-                                    {form.skills.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => removeSkill(index)}
-                                            className="text-red-500 hover:text-red-700 p-1"
-                                            title="Remove skill"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    )}
+            {(() => {
+                const person = editing ? personnel.find(p => p.id === editing) : null;
+                return (
+                    <Modal
+                        isOpen={showModal}
+                        onClose={handleCloseModal}
+                        title={editing ? 'Edit Personnel' : 'Add New Personnel'}
+                    >
+                        {errors.submit && <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-6 border border-red-200 font-medium">{errors.submit}</div>}
+                        <form onSubmit={handleSubmit}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                <div className="flex flex-col">
+                                    <label htmlFor="name" className="font-semibold mb-2 text-gray-700 text-sm">Full Name *</label>
+                                    <input
+                                        id="name"
+                                        type="text"
+                                        value={form.name}
+                                        onChange={(e) => {
+                                            setForm({ ...form, name: e.target.value });
+                                            clearFieldError('name', e.target.value);
+                                        }}
+                                        className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.name ? 'border-red-500' : ''}`}
+                                        placeholder="Enter full name"
+                                        autoFocus
+                                    />
+                                    {errors.name && <span className="text-red-500 text-xs mt-1 font-medium">{errors.name}</span>}
                                 </div>
-                            ))}
-                            <button
-                                type="button"
-                                onClick={addSkill}
-                                className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
-                            >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
-                                Add Skill
-                            </button>
-                        </div>
-                        {errors.skills && <span className="text-red-500 text-xs mt-1 font-medium block">{errors.skills}</span>}
-                    </div>
-                    <div className="flex gap-3 mt-3">
-                        <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none min-w-32 flex items-center justify-center" disabled={loading}>
-                            {loading ? 'Saving...' : (editing ? 'Update Personnel' : 'Add Personnel')}
-                        </button>
-                        <button type="button" className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200" onClick={handleCloseModal}>
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </Modal>
+                                <div className="flex flex-col">
+                                    <label htmlFor="email" className="font-semibold mb-2 text-gray-700 text-sm">Email Address *</label>
+                                    <input
+                                        id="email"
+                                        type="email"
+                                        value={form.email}
+                                        onChange={(e) => {
+                                            setForm({ ...form, email: e.target.value });
+                                            clearFieldError('email', e.target.value);
+                                        }}
+                                        className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.email ? 'border-red-500' : ''}`}
+                                        placeholder="Enter email address"
+                                    />
+                                    {errors.email && <span className="text-red-500 text-xs mt-1 font-medium">{errors.email}</span>}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
+                                <div className="flex flex-col">
+                                    <label htmlFor="role" className="font-semibold mb-2 text-gray-700 text-sm">Role Title</label>
+                                    <select
+                                        id="role"
+                                        value={form.role_title}
+                                        onChange={(e) => setForm({ ...form, role_title: e.target.value })}
+                                        disabled={editing && person && person.role_title === "manager"}
+                                        className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                    >
+                                        <option value="">{person && person.role_title == "manager" ? "Manager" : "Select a role"}</option>
+                                        <option value="Software Engineer">Software Engineer</option>
+                                        <option value="Project Manager">Project Manager</option>
+                                        <option value="UI/UX Designer">UI/UX Designer</option>
+                                        <option value="Data Analyst">Data Analyst</option>
+                                        <option value="DevOps Engineer">DevOps Engineer</option>
+                                        <option value="QA Engineer">QA Engineer</option>
+                                        <option value="Business Analyst">Business Analyst</option>
+                                        <option value="Product Manager">Product Manager</option>
+                                        <option value="System Administrator">System Administrator</option>
+                                        <option value="Database Administrator">Database Administrator</option>
+                                    </select>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label htmlFor="experience" className="font-semibold mb-2 text-gray-700 text-sm">Experience Level</label>
+                                    <select
+                                        id="experience"
+                                        value={form.experience_level}
+                                        onChange={(e) => setForm({ ...form, experience_level: e.target.value })}
+                                        disabled={editing && person && person.id === user?.id}
+                                        className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                    >
+                                        <option value="Junior">Junior</option>
+                                        <option value="Mid-Level">Mid-Level</option>
+                                        <option value="Senior">Senior</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
+                                <div className="flex flex-col">
+                                    <label htmlFor="status" className="font-semibold mb-2 text-gray-700 text-sm">Availability Status</label>
+                                    <select
+                                        id="status"
+                                        value={form.status}
+                                        onChange={(e) => setForm({ ...form, status: e.target.value })}
+                                        className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
+                                    >
+                                        <option value="Available">Available</option>
+                                        <option value="Busy">Busy</option>
+                                        <option value="On Leave">On Leave</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="mb-4">
+                                <label className="font-semibold mb-2 text-gray-700 text-sm block">Personnel Skills</label>
+                                <div className="space-y-3">
+                                    {form.skills && form.skills.length > 0 && form.skills.map((skill, index) => (
+                                        <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <div className="flex-1">
+                                                <select
+                                                    value={skill.skill_id}
+                                                    onChange={(e) => updateSkill(index, 'skill_id', e.target.value)}
+                                                    className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
+                                                >
+                                                    <option value="">Select Skill</option>
+                                                    {skills && skills.length > 0 && skills.map((s) => (
+                                                        <option key={s.id} value={s.id}>
+                                                            {s.skill_name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <label className="text-sm text-gray-600">Level:</label>
+                                                <select
+                                                    value={skill.proficiency_level}
+                                                    onChange={(e) => updateSkill(index, 'proficiency_level', parseInt(e.target.value))}
+                                                    className="p-2 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-blue-500"
+                                                >
+                                                    <option value={1}>Beginner (1)</option>
+                                                    <option value={2}>Intermediate (2)</option>
+                                                    <option value={3}>Advanced (3)</option>
+                                                    <option value={4}>Expert (4)</option>
+                                                </select>
+                                            </div>
+                                            {form.skills.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeSkill(index)}
+                                                    className="text-red-500 hover:text-red-700 p-1"
+                                                    title="Remove skill"
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={addSkill}
+                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                        </svg>
+                                        Add Skill
+                                    </button>
+                                </div>
+                                {errors.skills && <span className="text-red-500 text-xs mt-1 font-medium block">{errors.skills}</span>}
+                            </div>
+                            <div className="flex gap-3 mt-3">
+                                <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none min-w-32 flex items-center justify-center" disabled={loading}>
+                                    {loading ? 'Saving...' : (editing ? 'Update Personnel' : 'Add Personnel')}
+                                </button>
+                                <button type="button" className="bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200" onClick={handleCloseModal}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </Modal>
+                );
+            })()}
 
             <Modal
                 isOpen={showViewModal}

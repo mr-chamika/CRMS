@@ -7,7 +7,6 @@ import ProjectList from './components/ProjectList';
 import ProjectMatching from './components/ProjectMatching';
 import EmployeeDashboard from './components/EmployeeDashboard';
 import Auth from './components/Auth';
-import Modal from './components/Modal';
 import SkillsManagement from './components/SkillsManagement';
 import ConfirmationModal from './components/ConfirmationModal';
 
@@ -60,7 +59,7 @@ function App() {
         );
     }
 
-    const isManager = user.role_title && (user.role_title == 'manager');
+    const isManager = user.role_title && (user.role_title === 'manager');
     console.log(user)
     console.log(isManager)
     return (
@@ -117,7 +116,7 @@ function App() {
             <main className="flex-1 p-0 overflow-hidden">
                 {isManager ? (
                     <>
-                        {activeTab === 'personnel' && <PersonnelList />}
+                        {activeTab === 'personnel' && <PersonnelList user={user} />}
                         {activeTab === 'projects' && <ProjectList />}
                         {activeTab === 'matching' && <ProjectMatching />}
                         {activeTab === 'skills' && <SkillsManagement />}

@@ -90,29 +90,6 @@ function ProjectMatching() {
         const confirmMessage = `Are you sure you want to ${actionText} ${personnelName} ${isAssigned ? 'from' : 'to'} this project?`;
         setAssignData({ personnelId, personnelName, isAssigned, actionText, confirmMessage });
         setShowAssignModal(true);
-
-        setAssigning(personnelId);
-
-        try {
-            const response = await api.post(`/projects/${selectedProject}/assign/${personnelId}`, {
-                capacity_percentage: 100 // Default to 100% capacity
-            });
-
-            if (response.ok) {
-                const actionPast = isAssigned ? 'released' : 'assigned';
-                alert(`${personnelName} has been ${actionPast} ${isAssigned ? 'from' : 'to'} the project successfully!`);
-                // Refresh the matching data to show updated status
-                await handleMatch();
-            } else {
-                const errorData = await response.json();
-                alert(`Failed to ${actionText} personnel: ${errorData.error || 'Unknown error'}`);
-            }
-        } catch (error) {
-            console.error('Error assigning personnel:', error);
-            alert(`Failed to ${actionText} personnel. Please try again.`);
-        } finally {
-            setAssigning(null);
-        }
     };
 
     const confirmAssign = async () => {
@@ -129,12 +106,12 @@ function ProjectMatching() {
 
             if (response.ok) {
                 const actionPast = isAssigned ? 'released' : 'assigned';
-                alert(`${personnelName} has been ${actionPast} ${isAssigned ? 'from' : 'to'} the project successfully!`);
+                //alert(`${personnelName} has been ${actionPast} ${isAssigned ? 'from' : 'to'} the project successfully!`);
                 // Refresh the matching data to show updated status
                 await handleMatch();
             } else {
                 const errorData = await response.json();
-                alert(`Failed to ${actionText} personnel: ${errorData.error || 'Unknown error'}`);
+                //alert(`Failed to ${actionText} personnel: ${errorData.error || 'Unknown error'}`);
             }
         } catch (error) {
             setError('Network error occurred');
