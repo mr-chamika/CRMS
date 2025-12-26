@@ -65,6 +65,75 @@ const Auth = ({ onLogin }) => {
         setLoading(true);
         setError('');
 
+        if (isLogin) {
+            // Login validation
+            if (!formData.email.trim()) {
+                setError('Email is required.');
+                setLoading(false);
+                return;
+            }
+            if (!/\S+@\S+\.\S+/.test(formData.email)) {
+                setError('Please enter a valid email address.');
+                setLoading(false);
+                return;
+            }
+            if (!formData.password) {
+                setError('Password is required.');
+                setLoading(false);
+                return;
+            }
+        } else {
+            // Signup validation
+            if (!formData.name.trim()) {
+                setError('Full name is required.');
+                setLoading(false);
+                return;
+            }
+            if (!formData.email.trim()) {
+                setError('Email is required.');
+                setLoading(false);
+                return;
+            }
+            if (!/\S+@\S+\.\S+/.test(formData.email)) {
+                setError('Please enter a valid email address.');
+                setLoading(false);
+                return;
+            }
+            if (!formData.password || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/.test(formData.password)) {
+                setError('Password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character.');
+                setLoading(false);
+                return;
+            }
+            if (!formData.experience_level) {
+                setError('Experience level is required.');
+                setLoading(false);
+                return;
+            }
+            if (!formData.role_title) {
+                setError('Role is required.');
+                setLoading(false);
+                return;
+            }
+            if (!formData.status) {
+                setError('Availability status is required.');
+                setLoading(false);
+                return;
+            }
+            const hasEmptySkill = formData.skills.some(skill => skill.skill_id === '' || skill.skill_id === null);
+            if (hasEmptySkill) {
+                setError('Please select a skill for all skill entries.');
+                setLoading(false);
+                return;
+            }
+            const hasValidSkill = formData.skills.some(skill => skill.skill_id !== '' && skill.skill_id !== null);
+            if (!hasValidSkill) {
+                setError('At least one skill must be selected.');
+                setLoading(false);
+                return;
+            }
+        }
+
+
         try {
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/signup';
             const body = isLogin
@@ -106,11 +175,6 @@ const Auth = ({ onLogin }) => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                                {error}
-                            </div>
-                        )}
 
                         <div className="space-y-2">
                             {!isLogin && (
@@ -306,6 +370,11 @@ const Auth = ({ onLogin }) => {
                             )}
                         </div>
 
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                                {error}
+                            </div>
+                        )}
                         <div className="pt-0">
                             <button
                                 type="submit"

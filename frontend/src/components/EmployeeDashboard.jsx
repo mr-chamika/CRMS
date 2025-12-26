@@ -6,6 +6,7 @@ function EmployeeDashboard({ user }) {
     const [profile, setProfile] = useState(null);
     const [assignedProjects, setAssignedProjects] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [errors, setErrors] = useState({});
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -19,6 +20,19 @@ function EmployeeDashboard({ user }) {
     const [showProjectModal, setShowProjectModal] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [projectDetails, setProjectDetails] = useState(null);
+
+    const validateForm = () => {
+        const newErrors = {};
+        if (!formData.name.trim()) newErrors.name = 'Full name is required';
+        if (!formData.email.trim()) newErrors.email = 'Email address is required';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Please enter a valid email address';
+
+        // Validate skills: At least one skill with skill_id selected
+        const validSkills = skills.filter(skill => skill.skill_id !== '');
+        if (validSkills.length === 0) newErrors.skills = 'At least one skill must be selected';
+
+        return newErrors;
+    };
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -74,6 +88,14 @@ function EmployeeDashboard({ user }) {
 
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
+
+        const validationErrors = validateForm();
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            return;
+        }
+        setErrors({});
+
         try {
             // Update basic profile info
             await api.put(`/personnel/${user.id}`, formData);
@@ -95,6 +117,7 @@ function EmployeeDashboard({ user }) {
             setShowModal(false);
         } catch (error) {
             console.error('Error updating profile:', error);
+            setErrors({ submit: 'Failed to update profile. Please try again.' });
         }
     };
 
@@ -106,6 +129,18 @@ function EmployeeDashboard({ user }) {
         const updatedSkills = [...skills];
         updatedSkills[index] = { ...updatedSkills[index], [field]: value };
         setSkills(updatedSkills);
+
+        // Validate skills on change
+        if (field === 'skill_id') {
+            const newErrors = { ...errors };
+            const validSkills = updatedSkills.filter(skill => skill.skill_id !== '');
+            if (validSkills.length === 0) {
+                newErrors.skills = 'At least one skill must be selected';
+            } else {
+                delete newErrors.skills;
+            }
+            setErrors(newErrors);
+        }
     };
 
     const removeSkill = (index) => {
@@ -144,8 +179,6 @@ function EmployeeDashboard({ user }) {
             </div>
         );
     }
-
-    console.log(profile)
 
     return (
         <div className="flex flex-col h-full max-w-6xl mx-auto p-5">
@@ -215,9 +248,9 @@ function EmployeeDashboard({ user }) {
                                                     <div className="flex items-center gap-2 ml-2">
                                                         <span className="text-xs text-gray-600">Level:</span>
                                                         <span className={`inline-block py-0.5 px-2 rounded-full text-xs font-bold ${skill.proficiency_level === 4 ? 'bg-purple-100 text-purple-800' :
-                                                                skill.proficiency_level === 3 ? 'bg-blue-100 text-blue-800' :
-                                                                    skill.proficiency_level === 2 ? 'bg-green-100 text-green-800' :
-                                                                        'bg-gray-100 text-gray-800'
+                                                            skill.proficiency_level === 3 ? 'bg-blue-100 text-blue-800' :
+                                                                skill.proficiency_level === 2 ? 'bg-green-100 text-green-800' :
+                                                                    'bg-gray-100 text-gray-800'
                                                             }`}>
                                                             {skill.proficiency_level === 1 ? 'Beg' :
                                                                 skill.proficiency_level === 2 ? 'Int' :
@@ -300,6 +333,7 @@ function EmployeeDashboard({ user }) {
                 <div className="flex flex-col h-[600px]">
                     {/* Fixed top section with basic profile fields */}
                     <div className="flex-shrink-0">
+                        {errors.submit && <div className="bg-red-50 text-red-800 p-4 rounded-lg mb-6 border border-red-200 font-medium">{errors.submit}</div>}
                         <form onSubmit={handleUpdateProfile}>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                                 <div className="flex flex-col">
@@ -308,11 +342,31 @@ function EmployeeDashboard({ user }) {
                                         id="name"
                                         type="text"
                                         value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setFormData({ ...formData, name: value });
+                                            const newErrors = { ...errors };
+                                            if (!value.trim()) {
+                                                newErrors.name = 'Full name is required';
+                                            } else {
+                                                delete newErrors.name;
+                                            }
+                                            setErrors(newErrors);
+                                        }}
+                                        onBlur={() => {
+                                            const newErrors = { ...errors };
+                                            if (!formData.name.trim()) {
+                                                newErrors.name = 'Full name is required';
+                                            } else {
+                                                delete newErrors.name;
+                                            }
+                                            setErrors(newErrors);
+                                        }}
+                                        className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.name ? 'border-red-500' : ''}`}
                                         placeholder="Enter full name"
                                         required
                                     />
+                                    {errors.name && <span className="text-red-500 text-xs mt-1 font-medium">{errors.name}</span>}
                                 </div>
                                 <div className="flex flex-col">
                                     <label htmlFor="email" className="font-semibold mb-2 text-gray-700 text-sm">Email Address *</label>
@@ -320,11 +374,35 @@ function EmployeeDashboard({ user }) {
                                         id="email"
                                         type="email"
                                         value={formData.email}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20"
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            setFormData({ ...formData, email: value });
+                                            const newErrors = { ...errors };
+                                            if (!value.trim()) {
+                                                newErrors.email = 'Email address is required';
+                                            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+                                                newErrors.email = 'Please enter a valid email address';
+                                            } else {
+                                                delete newErrors.email;
+                                            }
+                                            setErrors(newErrors);
+                                        }}
+                                        onBlur={() => {
+                                            const newErrors = { ...errors };
+                                            if (!formData.email.trim()) {
+                                                newErrors.email = 'Email address is required';
+                                            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+                                                newErrors.email = 'Please enter a valid email address';
+                                            } else {
+                                                delete newErrors.email;
+                                            }
+                                            setErrors(newErrors);
+                                        }}
+                                        className={`p-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-200 bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-20 ${errors.email ? 'border-red-500' : ''}`}
                                         placeholder="Enter email address"
                                         required
                                     />
+                                    {errors.email && <span className="text-red-500 text-xs mt-1 font-medium">{errors.email}</span>}
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-4">
@@ -415,6 +493,8 @@ function EmployeeDashboard({ user }) {
                                                 <option value={4}>Expert (4)</option>
                                             </select>
                                         </div>
+                                        {errors.skills && <span className="text-red-500 text-xs mt-1 font-medium block">{errors.skills}</span>}
+
                                         {skills.length > 1 && (
                                             <button
                                                 type="button"
@@ -428,6 +508,7 @@ function EmployeeDashboard({ user }) {
                                             </button>
                                         )}
                                     </div>
+
                                 ))}
                                 <button
                                     type="button"

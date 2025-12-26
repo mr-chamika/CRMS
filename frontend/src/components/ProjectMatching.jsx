@@ -432,7 +432,7 @@ function ProjectMatching() {
                                                             : person.is_assigned_to_project
                                                                 ? 'Release'
                                                                 : person.has_date_overlap
-                                                                    ? 'Date Conflict'
+                                                                    ? 'Overlap'
                                                                     : (person.currentUtilization || 0) >= 80
                                                                         ? 'Overloaded'
                                                                         : 'Assign'

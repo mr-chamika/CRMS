@@ -16,6 +16,7 @@ function SkillsManagement() {
         category: '',
         description: ''
     });
+    const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -37,6 +38,17 @@ function SkillsManagement() {
 
     const handleAddSkill = async (e) => {
         e.preventDefault();
+        setError('');
+
+        if (!formData.skill_name.trim()) {
+            setError('Skill name is required.');
+            return;
+        }
+        if (!formData.category) {
+            setError('Category is required.');
+            return;
+        }
+
         try {
             await api.post('/skills', formData);
             setShowAddModal(false);
@@ -44,6 +56,8 @@ function SkillsManagement() {
             fetchSkills();
         } catch (error) {
             console.error('Error adding skill:', error);
+            setError('Skill can not be duplicated. Please try again.');
+
         }
     };
 
@@ -103,7 +117,7 @@ function SkillsManagement() {
         return matchesSearch && matchesCategory;
     });
 
-    const categories = [...new Set(skills.map(skill => skill.category))];
+    const categories = [...new Set(skills.reverse().map(skill => skill.category))];
 
     if (loading) {
         return (
@@ -318,6 +332,11 @@ function SkillsManagement() {
                             />
                         </div>
                     </div>
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">
+                            {error}
+                        </div>
+                    )}
                     <div className="flex gap-3 mt-6">
                         <button
                             type="submit"
