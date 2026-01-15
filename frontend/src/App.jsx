@@ -126,7 +126,7 @@ function App() {
             {/* Logout Confirmation Modal */}
             <ConfirmationModal
                 isOpen={showLogoutModal}
-                onClose={() => setShowLogoutModal(false)}
+                onClose={() => { setShowLogoutModal(false); setActiveTab("personnel") }}
                 onConfirm={confirmLogout}
                 title="Confirm Logout"
                 message="Are you sure you want to logout? You will be redirected to the login page."
