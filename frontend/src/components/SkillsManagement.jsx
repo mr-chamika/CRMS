@@ -29,6 +29,7 @@ function SkillsManagement() {
             const response = await api.get('/skills');
             const data = await response.json();
             setSkills(data);
+            console.log(data);
         } catch (error) {
             console.error('Error fetching skills:', error);
         } finally {
@@ -110,10 +111,10 @@ function SkillsManagement() {
         setShowEditModal(true);
     };
 
-    const filteredSkills = skills.filter(skill => {
-        const matchesSearch = skill.skill_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            skill.description.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesCategory = !selectedCategory || skill.category === selectedCategory;
+
+    const filteredSkills = skills?.filter(skill => {
+        const matchesSearch = skill?.skill_name?.toLowerCase().includes(searchTerm?.toLowerCase())
+        const matchesCategory = !selectedCategory || skill?.category === selectedCategory;
         return matchesSearch && matchesCategory;
     });
 

@@ -124,18 +124,9 @@ function PersonnelList({ user }) {
 
             if (editing) {
                 await api.put(`/personnel/${editing}`, personnelData);
-                // Update skills - filter out empty skill slots
                 const validSkills = form.skills.filter(skill => skill.skill_id && String(skill.skill_id).trim() !== '');
                 await api.put(`/personnel/${editing}/skills`, { skills: validSkills });
                 setEditing(null);
-            } else {
-                const response = await api.post('/personnel', personnelData);
-                const personnelId = response.data.id;
-                // Add skills for new personnel - filter out empty skill slots
-                const validSkills = form.skills.filter(skill => skill.skill_id && skill.skill_id.trim() !== '');
-                if (validSkills.length > 0) {
-                    await api.put(`/personnel/${personnelId}/skills`, { skills: validSkills });
-                }
             }
             setForm({
                 name: '',
@@ -188,20 +179,6 @@ function PersonnelList({ user }) {
             }
         }
     };
-
-    // const handleAddNew = () => {
-    //     setForm({
-    //         name: '',
-    //         email: '',
-    //         role_title: '',
-    //         experience_level: 'Junior',
-    //         status: 'Available',
-    //         skills: [{ skill_id: '', proficiency_level: 1 }]
-    //     });
-    //     setEditing(null);
-    //     setErrors({});
-    //     setShowModal(true);
-    // };
 
     const handleCloseModal = () => {
         setShowModal(false);

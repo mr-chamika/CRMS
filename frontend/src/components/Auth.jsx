@@ -17,20 +17,26 @@ const Auth = ({ onLogin }) => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (!isLogin) {
-            fetchSkills();
-        }
-    }, [isLogin]);
+
+        fetchSkills();
+
+    }, []);
 
     const fetchSkills = async () => {
-        try {
-            const response = await fetch('http://localhost:5000/api/skills');
-            const data = await response.json();
-            setSkills(data || []);
-            console.log(data)
-        } catch (error) {
-            console.error('Error fetching skills:', error);
-        }
+
+        await fetch('http://localhost:5000/api/skills')
+            .then(res => res.json())
+            .then(data => { setSkills(data || []) })
+            .catch(error => console.error('Error fetching skills:', error));
+
+        // try {
+        //     const response = await fetch('http://localhost:5000/api/skills');
+        //     const data = await response.json();
+        //     setSkills(data || []);
+        //     console.log(data)
+        // } catch (error) {
+        //     console.error('Error fetching skills:', error);
+        // }
     };
 
     const handleChange = (e) => {
