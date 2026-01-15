@@ -1,6 +1,6 @@
 # Consultancy Resource & Skill Management System (CRMS)
 
-**Time Period:** December 2025 - January 2026  
+**Time Period:** 25th December 2025 - 26th December 2026  
 **Status:** Final Submission
 
 ---

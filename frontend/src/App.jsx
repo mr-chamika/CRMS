@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-// eslint-disable-next-line no-unused-vars
 import PersonnelList from './components/PersonnelList';
-// eslint-disable-next-line no-unused-vars
 import ProjectList from './components/ProjectList';
-// eslint-disable-next-line no-unused-vars
 import ProjectMatching from './components/ProjectMatching';
 import EmployeeDashboard from './components/EmployeeDashboard';
 import Auth from './components/Auth';
