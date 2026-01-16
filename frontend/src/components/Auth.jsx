@@ -18,9 +18,13 @@ const Auth = ({ onLogin }) => {
 
     useEffect(() => {
 
-        fetchSkills();
+        if (!isLogin) {//avoid unnecessary fetch for login page
 
-    }, []);
+            fetchSkills();
+
+        }
+
+    }, [isLogin]);//for realtime skill list update
 
     const fetchSkills = async () => {
 
